@@ -217,16 +217,15 @@ function injectNav(activePage) {
       </div>
     </a>
     <div class="topbar-nav">
-      <a class="dna" href="library.html?tab=dna">⬡ DNA</a>
-      <a class="rna" href="library.html?tab=rna">≋ RNA</a>
-      <a class="protein" href="library.html?tab=protein">✦ Protein</a>
+      <a class="dna" href="library.html?mode=analysis&tab=dna">⬡ DNA</a>
+      <a class="rna" href="library.html?mode=analysis&tab=rna">≋ RNA</a>
+      <a class="protein" href="library.html?mode=analysis&tab=protein">✦ Protein</a>
     </div>
     <div class="topbar-right">
       <div class="status-dot"></div>
       <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">ONLINE</span>
       <div class="plan-badge">${plan}</div>
       <div class="account-btn" onclick="toggleDropdown()" id="acct-btn">
-        ${(user.name||'U')[0].toUpperCase()}
         ${(user.name||'U')[0].toUpperCase()}
         <div class="account-dropdown" id="acct-dropdown">
           <div class="dropdown-header">
@@ -291,21 +290,21 @@ function injectNav(activePage) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
       Resources
     </a>
-    <a class="nav-item ${activePage==='library'?'active':''}" href="library.html">
+    <a class="nav-item ${activePage==='library'?'active':''}" href="library.html?mode=library">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
       Library
     </a>
     <div class="nav-divider"></div>
     <div class="nav-section-label">Workbenches</div>
-    <a class="nav-item ${activePage==='protein-sim'?'active':''}" href="library.html?tab=protein">
+    <a class="nav-item ${activePage==='protein-sim'?'active':''}" href="library.html?mode=analysis&tab=protein">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12z"/></svg>
       Protein Studio
     </a>
-    <a class="nav-item ${activePage==='alignment'?'active':''}" href="library.html?tab=dna&section=alignment">
+    <a class="nav-item ${activePage==='alignment'?'active':''}" href="library.html?mode=analysis&tab=dna&section=alignment">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
       Alignment Lab
     </a>
-    <a class="nav-item ${activePage==='docking'?'active':''}" href="library.html?tab=protein&section=docking">
+    <a class="nav-item ${activePage==='docking'?'active':''}" href="library.html?mode=analysis&tab=protein&section=docking">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       Mol Docking
     </a>

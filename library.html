@@ -23,6 +23,16 @@
   .lib-tab.active.protein { background:rgba(191,95,255,0.1); color:var(--purple); border-color:var(--purple); }
   .lib-tab:hover:not(.active) { color:var(--text); border-color:var(--text-dim); }
 
+  .mode-switch { display:flex; gap:8px; margin-bottom:24px; }
+  .mode-btn {
+    padding:8px 20px; border-radius:8px; font-family:var(--mono); font-size:11px;
+    letter-spacing:2px; text-transform:uppercase; cursor:pointer; border:1px solid var(--border);
+    color:var(--text-dim); background:transparent; transition:all 0.2s;
+  }
+  .mode-btn.active { background:var(--surface2); color:var(--text); border-color:var(--text-dim); }
+  .mode-btn:hover:not(.active) { color:var(--text); border-color:var(--text-dim); }
+
+
   .search-bar {
     width:100%; background:var(--surface); border:1px solid var(--border);
     border-radius:10px; padding:12px 16px; color:var(--text);
@@ -30,6 +40,13 @@
     transition:all 0.2s;
   }
   .search-bar:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,229,255,0.1); }
+
+  .protocol-panel { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px; margin-bottom:24px; }
+  .protocol-title { font-size:18px; font-weight:700; margin-bottom:10px; }
+  .protocol-meta { color:var(--text-dim); font-size:13px; line-height:1.75; margin-bottom:18px; }
+  .protocol-content { display:grid; gap:16px; }
+  .protocol-section-title { font-family:var(--mono); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px; }
+  .protocol-section-text { font-size:13px; line-height:1.75; color:var(--text); }
 
   .tab-content { display:none; }
   .tab-content.active { display:block; }
@@ -53,10 +70,11 @@
     padding:16px; transition:all 0.2s; position:relative; overflow:hidden;
   }
   .tool-card:hover { transform:translateY(-2px); }
-  .tool-card.accessible { cursor:pointer; }
-  .tool-card.accessible:hover { border-color:var(--cyan); box-shadow:0 4px 20px rgba(0,229,255,0.1); }
-  .tool-card.accessible.rna:hover { border-color:var(--green); box-shadow:0 4px 20px rgba(0,255,136,0.1); }
-  .tool-card.accessible.protein:hover { border-color:var(--purple); box-shadow:0 4px 20px rgba(191,95,255,0.1); }
+  .tool-card.clickable { cursor:pointer; }
+  .tool-card.selected { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,229,255,0.12); }
+  .tool-card.clickable:hover { border-color:var(--cyan); box-shadow:0 4px 20px rgba(0,229,255,0.1); }
+  .tool-card.clickable.rna:hover { border-color:var(--green); box-shadow:0 4px 20px rgba(0,255,136,0.1); }
+  .tool-card.clickable.protein:hover { border-color:var(--purple); box-shadow:0 4px 20px rgba(191,95,255,0.1); }
   .tool-card.locked { opacity:0.6; }
   .tool-name { font-size:13px; font-weight:600; margin-bottom:6px; }
   .tool-desc { font-size:11px; color:var(--text-dim); line-height:1.5; margin-bottom:12px; }
@@ -90,6 +108,11 @@
   <div class="page-sub">Browse and launch analysis protocols</div>
 </div>
 
+<div class="mode-switch">
+  <div class="mode-btn active" onclick="setMode('analysis')">Analysis</div>
+  <div class="mode-btn" onclick="setMode('library')">Library</div>
+</div>
+
 <div class="lib-tabs">
   <div class="lib-tab active dna" onclick="switchTab('dna')">⬡ DNA Analysis</div>
   <div class="lib-tab rna" onclick="switchTab('rna')">≋ RNA Analysis</div>
@@ -97,6 +120,11 @@
 </div>
 
 <input class="search-bar" type="text" placeholder="Search techniques, tools, protocols..." oninput="filterTools(this.value)" />
+<div class="protocol-panel" id="protocol-panel">
+  <div class="protocol-title">Select a technique to view the protocol</div>
+  <div class="protocol-meta">Click any technique card to see what it does, why it is used, how it transforms the data, and what the expected final output means.</div>
+  <div class="protocol-content" id="protocol-content"></div>
+</div>
 
 <!-- DNA TAB -->
 <div class="tab-content active" id="tab-dna">
@@ -202,9 +230,37 @@
   </div>
 </div>
 
+<!-- LIBRARY VIEW -->
+<div class="library-view" id="library-view" style="display:none;">
+  <div class="section-header dna">DNA Techniques <span class="count-badge" id="dna-count">0</span></div>
+  <div class="tools-grid" id="library-dna-grid"></div>
+  <div class="section-header rna">RNA Techniques <span class="count-badge" id="rna-count">0</span></div>
+  <div class="tools-grid" id="library-rna-grid"></div>
+  <div class="section-header protein">Protein Techniques <span class="count-badge" id="protein-count">0</span></div>
+  <div class="tools-grid" id="library-protein-grid"></div>
+</div>
+
 </div>
 
 <script>
+let currentMode = 'analysis';
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`.mode-btn[onclick="setMode('${mode}')"]`).classList.add('active');
+  const isAnalysis = mode === 'analysis';
+  document.querySelector('.lib-tabs').style.display = isAnalysis ? 'flex' : 'none';
+  document.getElementById('library-view').style.display = isAnalysis ? 'none' : 'block';
+  document.getElementById('protocol-panel').style.display = isAnalysis ? 'none' : 'block';
+  document.querySelectorAll('.tab-content').forEach(c => c.style.display = isAnalysis ? '' : 'none');
+  renderTools();
+  if (!isAnalysis) {
+    const defaultCard = document.querySelector('#library-view .tool-card');
+    if (defaultCard) showProtocol(defaultCard.id.replace('tool-',''));
+  }
+}
+
 function switchTab(tab) {
   document.querySelectorAll('.lib-tab').forEach((t,i) => {
     t.classList.remove('active');
@@ -225,6 +281,28 @@ function renderTools() {
   const config = getToolConfig();
   const plan = getPlan();
 
+  if (currentMode === 'library') {
+    // Render library view
+    const grids = { dna: document.getElementById('library-dna-grid'), rna: document.getElementById('library-rna-grid'), protein: document.getElementById('library-protein-grid') };
+    Object.keys(grids).forEach(type => grids[type].innerHTML = '');
+    const counts = { dna: 0, rna: 0, protein: 0 };
+
+    document.querySelectorAll('.tool-card').forEach(card => {
+      const id = card.id.replace('tool-','');
+      const type = card.classList.contains('rna') ? 'rna' : card.classList.contains('protein') ? 'protein' : 'dna';
+      const clone = card.cloneNode(true);
+      clone.onclick = () => showProtocol(id);
+      grids[type].appendChild(clone);
+      counts[type]++;
+    });
+
+    document.getElementById('dna-count').textContent = counts.dna;
+    document.getElementById('rna-count').textContent = counts.rna;
+    document.getElementById('protein-count').textContent = counts.protein;
+    return;
+  }
+
+  // Analysis mode
   document.querySelectorAll('.tool-card').forEach(card => {
     const id = card.id.replace('tool-','');
     const tier = config[id] || 'free';
@@ -237,18 +315,156 @@ function renderTools() {
     let footerHTML = showTier ? `<span class="tier-badge ${tier}">${tierLabels[tier]}</span>` : '';
 
     if (accessible) {
-      card.classList.add('accessible');
+      card.classList.add('accessible', 'clickable');
       card.classList.remove('locked');
-      footerHTML += `<button class="launch-btn ${type}" onclick="launchTool('${id}','${type}')">⚡ Launch →</button>`;
+      footerHTML += `<button class="launch-btn ${type}" onclick="event.stopPropagation(); launchTool('${id}', '${type}')">Launch</button>`;
     } else {
       card.classList.add('locked');
       card.classList.remove('accessible');
-      footerHTML += `<button class="coming-soon-btn" onclick="location.href='subscription.html'">🔒 Upgrade</button>`;
-      card.innerHTML = card.innerHTML + '';
+      footerHTML += `<div class="coming-soon-btn">Coming Soon</div>`;
     }
     footer.innerHTML = footerHTML;
+    card.onclick = null; // Remove onclick for analysis mode
   });
 }
+
+function showProtocol(id) {
+  document.querySelectorAll('.tool-card').forEach(card => card.classList.toggle('selected', card.id === 'tool-' + id));
+  const toolElement = document.getElementById('tool-' + id);
+  const defaultTitle = toolElement ? `${toolElement.querySelector('.tool-name').textContent} — Protocol Overview` : 'Technique Protocol';
+  const defaultSubtitle = toolElement ? toolElement.querySelector('.tool-desc').textContent : 'Review the technique details below.';
+  const details = TOOL_PROTOCOLS[id] || {
+    title: defaultTitle,
+    subtitle: defaultSubtitle,
+    about: 'This technique is a defined analysis step in the MOCO workflow, applying domain-specific processing to your biological data.',
+    why: 'It is used to answer a specific experimental question or transform raw measurements into interpretable biological results.',
+    data: 'The selected technique processes the input data according to established computational or lab protocols, normalizing and extracting relevant features.',
+    output: 'The final output is a structured result that supports interpretation, downstream analysis, and decision-making for your study.'
+  };
+  document.getElementById('protocol-panel').querySelector('.protocol-title').textContent = details.title;
+  document.getElementById('protocol-panel').querySelector('.protocol-meta').textContent = details.subtitle;
+  document.getElementById('protocol-content').innerHTML = `
+    <div class="protocol-section">
+      <div class="protocol-section-title">What it is</div>
+      <div class="protocol-section-text">${details.about}</div>
+    </div>
+    <div class="protocol-section">
+      <div class="protocol-section-title">Why it is used</div>
+      <div class="protocol-section-text">${details.why}</div>
+    </div>
+    <div class="protocol-section">
+      <div class="protocol-section-title">What it does to the data</div>
+      <div class="protocol-section-text">${details.data}</div>
+    </div>
+    <div class="protocol-section">
+      <div class="protocol-section-title">Final output & interpretation</div>
+      <div class="protocol-section-text">${details.output}</div>
+    </div>
+  `;
+}
+
+const TOOL_PROTOCOLS = {
+  'bwa-mem': {
+    title: 'BWA-MEM — DNA Alignment Protocol',
+    subtitle: 'High-performance mapping of DNA reads to a reference genome.',
+    about: 'BWA-MEM aligns short and long DNA sequencing reads to a reference genome using a seed-and-extend strategy optimized for speed and accuracy.',
+    why: 'It is used to produce reliable alignments for downstream variant calling and genome analysis.',
+    data: 'The algorithm matches raw reads against the reference, resolves ambiguous placements, and records the best alignments.',
+    output: 'The output is an aligned read file (SAM/BAM) that enables interpretation of coverage, variants, and sequence origin.'
+  },
+  'bowtie2': {
+    title: 'Bowtie2 — Fast DNA Alignment Protocol',
+    subtitle: 'Efficient short-read alignment for genomics data.',
+    about: 'Bowtie2 maps DNA reads to a reference using an FM-index for fast and memory-efficient searching.',
+    why: 'Use it when you need rapid alignment of large DNA datasets with low resource usage.',
+    data: 'Reads are aligned to indexed reference sequences, producing position and mismatch information.',
+    output: 'The output is a mapped read set that can be interpreted for variant discovery, coverage assessment, and sequence validation.'
+  },
+  'gatk': {
+    title: 'GATK HaplotypeCaller — Variant Calling Protocol',
+    subtitle: 'Detect genetic variants from aligned DNA reads.',
+    about: 'GATK HaplotypeCaller uses local reassembly and statistical modeling to identify SNPs and indels.',
+    why: 'It is used when accurate variant calling is needed for genomic analysis.',
+    data: 'Aligned reads are examined in candidate regions, assembled into haplotypes, and scored for variant likelihood.',
+    output: 'The output is a VCF file with called variants for interpretation of genotype and functional impact.'
+  },
+  'freebayes': {
+    title: 'FreeBayes — Bayesian Variant Detection Protocol',
+    subtitle: 'Sensitive variant discovery from sequence alignments.',
+    about: 'FreeBayes uses Bayesian models to detect SNPs, indels, and complex variants in aligned DNA data.',
+    why: 'Use it when flexible variant calling is required across samples or ploidy levels.',
+    data: 'It analyzes read evidence at each site and computes the probability of alternative alleles.',
+    output: 'The output is a VCF containing variant calls and supporting evidence for interpretation.'
+  },
+  'vblast': {
+    title: 'VBLAST / BLAST — Sequence Similarity Protocol',
+    subtitle: 'Compare query sequences with reference databases.',
+    about: 'BLAST searches identify homologous sequences and functional matches using database alignment.',
+    why: 'Use it to annotate unknown sequences and infer biological function.',
+    data: 'The query sequence is aligned against reference entries, scoring matches and e-values.',
+    output: 'The output is a ranked list of matching sequences for biological interpretation and annotation.'
+  },
+  'other-assembly': {
+    title: 'Genome Assembly — Contig Reconstruction Protocol',
+    subtitle: 'Assemble sequencing reads into longer contiguous sequences.',
+    about: 'Genome assembly reconstructs longer DNA contigs from short sequencing reads using overlap-layout-consensus or De Bruijn graph strategies.',
+    why: 'It is used when building draft genomes or reference assemblies from raw sequence data.',
+    data: 'Reads are combined and stitched together based on overlaps, producing contiguous sequences and scaffolds.',
+    output: 'The output is a set of assembled contigs for interpretation of genome structure and gene content.'
+  },
+  'variant-annotation': {
+    title: 'Variant Annotation — Functional Interpretation Protocol',
+    subtitle: 'Annotate genetic variants with predicted biological impact.',
+    about: 'Variant annotation maps detected variants to known genes, transcripts, and regulatory elements to predict their functional consequences.',
+    why: 'It is used to prioritize variants for downstream analysis and biological interpretation.',
+    data: 'Each variant is compared against annotation databases to assign effect predictions, gene context, and pathogenicity scores.',
+    output: 'The output is a ranked annotation report that supports biological interpretation and experimental planning.'
+  },
+  'chipseq': {
+    title: 'ChIP-seq — Protein-DNA Interaction Profiling Protocol',
+    subtitle: 'Map protein binding sites and epigenetic modifications.',
+    about: 'ChIP-seq combines chromatin immunoprecipitation with sequencing to identify genomic regions bound by transcription factors or histone modifications.',
+    why: 'It is used to study regulatory networks, epigenetic state, and binding site occupancy.',
+    data: 'Immunoprecipitated DNA fragments are sequenced, aligned, and enriched regions are identified across the genome.',
+    output: 'The output is a peak list and binding profile for interpretation of regulatory control and epigenetic state.'
+  },
+  'rnaseq': {
+    title: 'RNA-seq — Transcriptome Profiling Protocol',
+    subtitle: 'Quantify gene expression from RNA sequencing data.',
+    about: 'RNA-seq measures transcript abundance by aligning RNA reads to a reference transcriptome or genome and counting expressed features.',
+    why: 'It is used to compare expression changes across conditions and identify differentially expressed genes.',
+    data: 'Sequencing reads are aligned or pseudoaligned, quantified per transcript or gene, and normalized for library size.',
+    output: 'The output is a gene expression matrix and differential expression report for biological interpretation.'
+  },
+  'methylseq': {
+    title: 'Methylation Sequencing — Epigenetic Modification Protocol',
+    subtitle: 'Profile DNA methylation across the genome.',
+    about: 'Methyl-seq detects methylated cytosines by sequencing bisulfite-converted DNA or targeted methylation libraries.',
+    why: 'It is used to understand epigenetic regulation and methylation changes in disease or development.',
+    data: 'Converted reads are aligned to a reference, and methylation calls are extracted at CpG sites to quantify modification levels.',
+    output: 'The output is a methylation map for interpretation of epigenetic changes and gene regulation.'
+  },
+  'atacseq': {
+    title: 'ATAC-seq — Chromatin Accessibility Protocol',
+    subtitle: 'Measure open chromatin and regulatory accessibility.',
+    about: 'ATAC-seq captures accessible DNA regions by transposing adapters into open chromatin, followed by sequencing.',
+    why: 'It is used to identify regulatory elements, enhancers, and changes in chromatin state.',
+    data: 'Reads are aligned, and regions of high transposition signal are identified as accessible sites.',
+    output: 'The output is an accessibility profile that informs interpretation of gene regulation and chromatin architecture.'
+  },
+  'rsats': {
+    title: 'RSAT — Regulatory Sequence Analysis Protocol',
+    subtitle: 'Analyze regulatory motifs and transcription factor binding sites.',
+    about: 'RSAT finds and scores transcription factor binding motifs and patterns in DNA sequences.',
+    why: 'It is used to interpret regulatory regions and predict transcriptional control.',
+    data: 'Sequence motifs are scanned, scored, and compared to known regulatory patterns.',
+    output: 'The output is a motif report that supports interpretation of gene regulation and functional elements.'
+  }
+};
+
+// Show first technique by default
+const defaultCard = document.querySelector('.tool-card.clickable');
+if (defaultCard) showProtocol(defaultCard.id.replace('tool-',''));
 
 function launchTool(id, type) {
   const toolNames = {
@@ -277,9 +493,10 @@ function launchTool(id, type) {
 
 // Check URL params
 const params = new URLSearchParams(window.location.search);
+const modeParam = params.get('mode');
+const initialMode = modeParam === 'library' ? 'library' : 'analysis';
+setMode(initialMode);
 if (params.get('tab')) switchTab(params.get('tab'));
-
-renderTools();
 </script>
 </body>
 </html>
