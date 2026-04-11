@@ -232,9 +232,9 @@ function renderTools() {
     const type = card.classList.contains('rna') ? 'rna' : card.classList.contains('protein') ? 'protein' : 'dna';
     const footer = card.querySelector('.tool-footer');
 
-    // Tier badge
     const tierLabels = { free:'Free', standard:'Standard', premium:'Premium' };
-    let footerHTML = `<span class="tier-badge ${tier}">${tierLabels[tier]}</span>`;
+    const showTier = !isAdmin();
+    let footerHTML = showTier ? `<span class="tier-badge ${tier}">${tierLabels[tier]}</span>` : '';
 
     if (accessible) {
       card.classList.add('accessible');

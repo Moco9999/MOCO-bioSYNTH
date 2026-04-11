@@ -71,8 +71,20 @@ function injectNav(activePage) {
     body { background: var(--bg); color: var(--text); font-family: var(--sans); display: flex; min-height: 100vh; }
     .bg-grid {
       position: fixed; inset: 0;
-      background-image: linear-gradient(rgba(0,229,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.02) 1px, transparent 1px);
-      background-size: 40px 40px; pointer-events: none; z-index: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(0,229,255,0.16), transparent 18%),
+                  radial-gradient(circle at 80% 15%, rgba(191,95,255,0.12), transparent 20%),
+                  radial-gradient(circle at 40% 80%, rgba(0,255,136,0.12), transparent 18%),
+                  linear-gradient(145deg, rgba(0,229,255,0.05), transparent 40%),
+                  linear-gradient(215deg, rgba(191,95,255,0.05), transparent 35%);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 200% 200%, 200% 200%;
+      background-blend-mode: screen;
+      animation: bgShift 18s linear infinite;
+      pointer-events: none; z-index: 0;
+    }
+    @keyframes bgShift {
+      0% { background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%; }
+      50% { background-position: 10% 20%, 90% 10%, 20% 80%, 30% 40%, 70% 50%; }
+      100% { background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%; }
     }
 
     /* TOPBAR */
