@@ -27,7 +27,7 @@
 </style>
 <div class="page-header"><div class="page-title">Visualization</div><div class="page-sub">RNA-seq analysis results and expression data</div></div>
 <div class="pipeline-progress">
-  <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text-dim);margin-bottom:16px">PIPELINE PROGRESS — CARDIAC RNA-SEQ</div>
+  <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text-dim);margin-bottom:16px">PIPELINE PROGRESS — RNA-SEQ ANALYSIS</div>
   <div class="progress-steps">
     <div class="step"><div class="step-circle done">✓</div><div class="step-label done">Raw FASTQ</div></div>
     <div class="step-line done"></div>
@@ -75,7 +75,7 @@
     </div>
     <div class="viz-card">
       <div class="viz-title">GO Enrichment</div>
-      ${[['Cardiac muscle contraction','p=0.0001',95],['Sarcomere organization','p=0.0004',78],['Calcium ion transport','p=0.0012',62]].map(([n,p,w])=>`
+      ${[['Muscle Contraction','p=0.0001',95],['Cell Cycle Regulation','p=0.0004',78],['Signal Transduction','p=0.0012',62]].map(([n,p,w])=>`
         <div class="go-bar"><div class="go-name"><span>${n}</span><span style="font-family:var(--mono);font-size:10px;color:var(--green)">${p}</span></div><div class="go-track"><div class="go-fill" style="width:${w}%"></div></div></div>
       `).join('')}
     </div>

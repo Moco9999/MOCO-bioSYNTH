@@ -120,6 +120,18 @@ function switchSettings(tab) {
 function setTheme(theme, el) {
   document.querySelectorAll('.theme-opt').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
+  const themes = {
+    dark: { bg: '#050a0e', surface: '#0a1520', surface2: '#0f1e2e', border: '#1a3040' },
+    darker: { bg: '#000', surface: '#0a0e16', surface2: '#111', border: '#111' },
+    teal: { bg: '#001016', surface: '#001d25', surface2: '#164e5e', border: '#164e5e' }
+  };
+  const t = themes[theme];
+  if (t) {
+    document.documentElement.style.setProperty('--bg', t.bg);
+    document.documentElement.style.setProperty('--surface', t.surface);
+    document.documentElement.style.setProperty('--surface2', t.surface2);
+    document.documentElement.style.setProperty('--border', t.border);
+  }
 }
 function saveProfile() {
   alert('Profile saved!');

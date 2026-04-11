@@ -35,21 +35,11 @@
 <div class="two-col">
   <div class="proj-card">
     <div style="font-size:15px;font-weight:600;margin-bottom:16px">👥 Team</div>
-    ${[['AC','Dr. A. Chen','PI','#00e5ff'],['MR','M. Rashid','Bioinformatician','#00ff88'],['SP','S. Park','Wet Lab','#bf5fff'],['JM','J. Müller','Data Analyst','#ffcc00']].map(([init,name,role,c])=>`
-      <div class="team-member">
-        <div class="avatar" style="background:${c}20;color:${c};border:1px solid ${c}30">${init}</div>
-        <div><div class="member-name">${name}</div><div class="member-role">${role}</div></div>
-      </div>
-    `).join('')}
+    <div style="color:var(--text-dim);text-align:center;padding:20px;">No team members</div>
   </div>
   <div class="proj-card">
     <div style="font-size:15px;font-weight:600;margin-bottom:16px">📁 Recent Files</div>
-    ${[['FASTQ','HF_cohort_3READS_run1.fastq.gz','2.1 GB · Apr 8, 2026','rgba(0,229,255,0.15)','#00e5ff'],['BED','cardiac_apa_sites_annotated.bed','18.4 MB · Apr 7, 2026','rgba(0,255,136,0.15)','#00ff88'],['CSV','DESeq2_results_HFvsCtrl.csv','4.2 MB · Apr 6, 2026','rgba(0,229,255,0.15)','#00e5ff'],['PDB','alphafold_TNNT2_structure.pdb','1.8 MB · Apr 5, 2026','rgba(191,95,255,0.15)','#bf5fff'],['XLSX','cohort_metadata_n48.xlsx','320 KB · Mar 29, 2026','rgba(0,255,136,0.15)','#00ff88']].map(([t,n,m,bg,c])=>`
-      <div class="file-item">
-        <div class="file-tag" style="background:${bg};color:${c}">${t}</div>
-        <div><div class="file-name">${n}</div><div class="file-meta">${m}</div></div>
-      </div>
-    `).join('')}
+    <div style="color:var(--text-dim);text-align:center;padding:20px;">No recent files</div>
   </div>
 </div>
 </div></body></html>

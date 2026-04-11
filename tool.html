@@ -286,6 +286,34 @@ function cleanSequence(seq) {
   return seq.replace(/[^ACGTURYSWKMBDHVNacgturyswkmbdhvn]/g, '').toUpperCase();
 }
 
+function translateDnaToProtein(dna) {
+  const codonTable = {
+    'TTT':'Phe','TTC':'Phe','TTA':'Leu','TTG':'Leu',
+    'CTT':'Leu','CTC':'Leu','CTA':'Leu','CTG':'Leu',
+    'ATT':'Ile','ATC':'Ile','ATA':'Ile','ATG':'Met',
+    'GTT':'Val','GTC':'Val','GTA':'Val','GTG':'Val',
+    'TCT':'Ser','TCC':'Ser','TCA':'Ser','TCG':'Ser',
+    'CCT':'Pro','CCC':'Pro','CCA':'Pro','CCG':'Pro',
+    'ACT':'Thr','ACC':'Thr','ACA':'Thr','ACG':'Thr',
+    'GCT':'Ala','GCC':'Ala','GCA':'Ala','GCG':'Ala',
+    'TAT':'Tyr','TAC':'Tyr','TAA':'*','TAG':'*',
+    'CAT':'His','CAC':'His','CAA':'Gln','CAG':'Gln',
+    'AAT':'Asn','AAC':'Asn','AAA':'Lys','AAG':'Lys',
+    'GAT':'Asp','GAC':'Asp','GAA':'Glu','GAG':'Glu',
+    'TGT':'Cys','TGC':'Cys','TGA':'*','TGG':'Trp',
+    'CGT':'Arg','CGC':'Arg','CGA':'Arg','CGG':'Arg',
+    'AGT':'Ser','AGC':'Ser','AGA':'Arg','AGG':'Arg',
+    'GGT':'Gly','GGC':'Gly','GGA':'Gly','GGG':'Gly'
+  };
+  let protein = '';
+  for (let i = 0; i < dna.length; i += 3) {
+    const codon = dna.substr(i, 3);
+    if (codon.length < 3) break;
+    protein += codonTable[codon] ? codonTable[codon] + '-' : 'X-';
+  }
+  return protein.slice(0, -1); // remove last -
+}
+
 function buildForm() {
   document.getElementById('tool-title').textContent = tool.title;
   document.getElementById('tool-description').textContent = tool.description;
@@ -300,7 +328,8 @@ function buildForm() {
           ? `<textarea id="${field.id}" placeholder="${field.placeholder || ''}"></textarea>`
           : `<input id="${field.id}" type="${field.type}" placeholder="${field.placeholder || ''}" />`}
       </div>`;
-  }).join('');
+  }).join('') + `<button class="action-btn primary" onclick="runToolAction()">Run Analysis</button>`;
+  document.getElementById('tool-run-btn').style.display = 'none';
 }
 
 function setOutput(html) {
@@ -462,7 +491,9 @@ function findOrfs() {
           if (stops.includes(seq.substr(j,3))) {
             const length = (j+3 - i) / 3;
             if (length >= minLen) {
-              orfs.push({ frame: frame+1, start:i+1, end:j+3, aa:length });
+              const orfSeq = seq.substr(i, j+3 - i);
+              const aaSeq = translateDnaToProtein(orfSeq);
+              orfs.push({ frame: frame+1, start:i+1, end:j+3, aa:length, aaSeq });
             }
             break;
           }
@@ -471,7 +502,7 @@ function findOrfs() {
     }
   }
   if (!orfs.length) { setAlert('No ORFs found with the chosen minimum length.', 'warning'); setOutput(''); return; }
-  const rows = orfs.map(o => `<div class="result-row"><div class="result-label">Frame ${o.frame}</div><div class="result-value">${o.aa} aa | ${o.start}-${o.end}</div></div>`).join('');
+  const rows = orfs.map(o => `<div class="result-row"><div class="result-label">Frame ${o.frame}</div><div class="result-value">${o.aa} aa | ${o.start}-${o.end}</div></div><div class="result-row"><div class="result-label">AA Sequence</div><div class="result-value" style="font-family:monospace; word-break:break-all;">${o.aaSeq}</div></div>`).join('');
   setOutput(`<div class="result-box">${rows}</div>`);
 }
 
@@ -496,8 +527,15 @@ function calculateGc() {
   if (!seq) { setAlert('Enter a DNA sequence.', 'warning'); return; }
   const counts = { A:0,C:0,G:0,T:0,other:0 };
   seq.split('').forEach(nt => { if (counts[nt] !== undefined) counts[nt]++; else counts.other++; });
-  const gc = ((counts.G + counts.C) / seq.length) * 100;
-  setOutput(`<div class="result-box">${['A','C','G','T','other'].map(n => `<div class="result-row"><div class="result-label">${n}</div><div class="result-value">${counts[n]}</div></div>`).join('')}<div class="result-row"><div class="result-label">GC Content</div><div class="result-value">${gc.toFixed(2)}%</div></div></div>`);
+  const total = seq.length;
+  const maxCount = Math.max(...Object.values(counts));
+  const scale = maxCount > 0 ? 50 / maxCount : 1; // scale to 50 chars
+  const bars = ['A','C','G','T'].map(n => {
+    const barLength = Math.round(counts[n] * scale);
+    return `<div style="font-family:monospace; margin:4px 0;">${n}: ${'─'.repeat(barLength)} (${counts[n]})</div>`;
+  }).join('');
+  const gc = ((counts.G + counts.C) / total) * 100;
+  setOutput(`<div class="result-box">${bars}<div style="margin-top:12px;">GC Content: ${gc.toFixed(2)}%</div></div>`);
   setAlert('GC content calculated.', 'success');
 }
 
@@ -640,7 +678,6 @@ function initPage() {
   if (toolId === 'mutation-analysis') {
     document.getElementById('fetch-ncbi-btn').style.display = 'inline-flex';
   }
-  setAlert(`Admin users may access all tools regardless of plan. Tool tier: ${tool.tier.toUpperCase()}.`, 'info');
 }
 
 initPage();
