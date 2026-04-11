@@ -42,11 +42,31 @@
   .search-bar:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,229,255,0.1); }
 
   .protocol-panel { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px; margin-bottom:24px; }
-  .protocol-title { font-size:18px; font-weight:700; margin-bottom:10px; }
+  .protocol-header-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:10px; }
+  .protocol-title { font-size:18px; font-weight:700; margin-bottom:0; }
+  .protocol-edit-btn {
+    padding:8px 14px; border-radius:10px; border:1px solid var(--border);
+    background:transparent; color:var(--cyan); font-family:var(--mono); font-size:11px;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .protocol-edit-btn:hover { background:rgba(0,229,255,0.08); }
   .protocol-meta { color:var(--text-dim); font-size:13px; line-height:1.75; margin-bottom:18px; }
   .protocol-content { display:grid; gap:16px; }
   .protocol-section-title { font-family:var(--mono); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px; }
   .protocol-section-text { font-size:13px; line-height:1.75; color:var(--text); }
+  .protocol-editor { display:none; margin-top:18px; }
+  .protocol-editor textarea {
+    width:100%; min-height:140px; border:1px solid var(--border); border-radius:12px;
+    background:var(--surface2); color:var(--text); padding:14px; font-family:var(--mono);
+    font-size:13px; resize:vertical;
+  }
+  .protocol-editor-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:12px; }
+  .protocol-editor-actions button {
+    padding:8px 14px; border-radius:10px; border:1px solid var(--border);
+    background:transparent; color:var(--text);
+    font-family:var(--mono); font-size:11px; cursor:pointer; transition:all 0.2s;
+  }
+  .protocol-editor-actions button:hover { background:var(--surface2); }
 
   .tab-content { display:none; }
   .tab-content.active { display:block; }
@@ -121,9 +141,21 @@
 
 <input class="search-bar" type="text" placeholder="Search techniques, tools, protocols..." oninput="filterTools(this.value)" />
 <div class="protocol-panel" id="protocol-panel">
-  <div class="protocol-title">Select a technique to view the protocol</div>
-  <div class="protocol-meta">Click any technique card to see what it does, why it is used, how it transforms the data, and what the expected final output means.</div>
+  <div class="protocol-header-row">
+    <div>
+      <div class="protocol-title">Select a technique to view the protocol</div>
+      <div class="protocol-meta">Click any technique card to see what it does and how it fits your workflow.</div>
+    </div>
+    <button class="protocol-edit-btn" id="protocol-edit-btn" onclick="toggleProtocolEditor()" style="display:none;">Edit Protocol</button>
+  </div>
   <div class="protocol-content" id="protocol-content"></div>
+  <div class="protocol-editor" id="protocol-editor">
+    <textarea id="protocol-edit-text" placeholder="Edit the protocol summary here..."></textarea>
+    <div class="protocol-editor-actions">
+      <button onclick="cancelProtocolEdit()">Cancel</button>
+      <button onclick="saveProtocol()">Save</button>
+    </div>
+  </div>
 </div>
 
 <!-- DNA TAB -->
@@ -257,7 +289,14 @@ function setMode(mode) {
   renderTools();
   if (!isAnalysis) {
     const defaultCard = document.querySelector('#library-view .tool-card');
-    if (defaultCard) showProtocol(defaultCard.id.replace('tool-',''));
+    if (defaultCard) showProtocol(defaultCard.dataset.toolId || defaultCard.id.replace('tool-',''));
+  }
+  if (isAnalysis) {
+    document.querySelector('.page-title').textContent = 'Analysis Workbench';
+    document.querySelector('.page-sub').textContent = 'Browse techniques and launch analysis workflows.';
+  } else {
+    document.querySelector('.page-title').textContent = 'Technique Library';
+    document.querySelector('.page-sub').textContent = 'Browse protocol summaries and detailed technique descriptions.';
   }
 }
 
@@ -291,6 +330,12 @@ function renderTools() {
       const id = card.id.replace('tool-','');
       const type = card.classList.contains('rna') ? 'rna' : card.classList.contains('protein') ? 'protein' : 'dna';
       const clone = card.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.dataset.toolId = id;
+      const footer = clone.querySelector('.tool-footer');
+      if (footer) footer.innerHTML = '';
+      clone.classList.remove('locked');
+      clone.classList.remove('accessible');
       clone.onclick = () => showProtocol(id);
       grids[type].appendChild(clone);
       counts[type]++;
@@ -329,39 +374,96 @@ function renderTools() {
 }
 
 function showProtocol(id) {
-  document.querySelectorAll('.tool-card').forEach(card => card.classList.toggle('selected', card.id === 'tool-' + id));
+  document.querySelectorAll('.tool-card').forEach(card => {
+    const cardId = card.id ? card.id.replace('tool-','') : card.dataset.toolId;
+    card.classList.toggle('selected', cardId === id);
+  });
   const toolElement = document.getElementById('tool-' + id);
   const defaultTitle = toolElement ? `${toolElement.querySelector('.tool-name').textContent} — Protocol Overview` : 'Technique Protocol';
   const defaultSubtitle = toolElement ? toolElement.querySelector('.tool-desc').textContent : 'Review the technique details below.';
-  const details = TOOL_PROTOCOLS[id] || {
-    title: defaultTitle,
-    subtitle: defaultSubtitle,
-    about: 'This technique is a defined analysis step in the MOCO workflow, applying domain-specific processing to your biological data.',
-    why: 'It is used to answer a specific experimental question or transform raw measurements into interpretable biological results.',
-    data: 'The selected technique processes the input data according to established computational or lab protocols, normalizing and extracting relevant features.',
-    output: 'The final output is a structured result that supports interpretation, downstream analysis, and decision-making for your study.'
-  };
+  const details = getProtocolDetails(id, defaultTitle, defaultSubtitle);
+  const editBtn = document.getElementById('protocol-edit-btn');
+  if (editBtn) {
+    editBtn.style.display = currentMode === 'library' && isAdmin() ? 'inline-flex' : 'none';
+  }
+  activeProtocolId = id;
+  cancelProtocolEdit();
   document.getElementById('protocol-panel').querySelector('.protocol-title').textContent = details.title;
   document.getElementById('protocol-panel').querySelector('.protocol-meta').textContent = details.subtitle;
-  document.getElementById('protocol-content').innerHTML = `
-    <div class="protocol-section">
-      <div class="protocol-section-title">What it is</div>
-      <div class="protocol-section-text">${details.about}</div>
-    </div>
-    <div class="protocol-section">
-      <div class="protocol-section-title">Why it is used</div>
-      <div class="protocol-section-text">${details.why}</div>
-    </div>
-    <div class="protocol-section">
-      <div class="protocol-section-title">What it does to the data</div>
-      <div class="protocol-section-text">${details.data}</div>
-    </div>
-    <div class="protocol-section">
-      <div class="protocol-section-title">Final output & interpretation</div>
-      <div class="protocol-section-text">${details.output}</div>
-    </div>
-  `;
+  if (details.summary) {
+    document.getElementById('protocol-content').innerHTML = `
+      <div class="protocol-section">
+        <div class="protocol-section-text">${details.summary}</div>
+      </div>
+    `;
+  } else {
+    document.getElementById('protocol-content').innerHTML = `
+      <div class="protocol-section">
+        <div class="protocol-section-title">What it is</div>
+        <div class="protocol-section-text">${details.about}</div>
+      </div>
+      <div class="protocol-section">
+        <div class="protocol-section-title">Why it is used</div>
+        <div class="protocol-section-text">${details.why}</div>
+      </div>
+      <div class="protocol-section">
+        <div class="protocol-section-title">What it does to the data</div>
+        <div class="protocol-section-text">${details.data}</div>
+      </div>
+      <div class="protocol-section">
+        <div class="protocol-section-title">Final output & interpretation</div>
+        <div class="protocol-section-text">${details.output}</div>
+      </div>
+    `;
+  }
 }
+
+let activeProtocolId = null;
+function getProtocolOverrides() {
+  return JSON.parse(localStorage.getItem('moco_protocol_overrides') || '{}');
+}
+function saveProtocolOverrides(overrides) {
+  localStorage.setItem('moco_protocol_overrides', JSON.stringify(overrides));
+}
+function getProtocolDetails(id, defaultTitle, defaultSubtitle) {
+  const overrides = getProtocolOverrides();
+  const saved = overrides[id];
+  const base = TOOL_PROTOCOLS[id] || {
+    title: defaultTitle,
+    subtitle: defaultSubtitle,
+    about: defaultSubtitle,
+    why: '',
+    data: '',
+    output: ''
+  };
+  if (saved) {
+    return { ...base, title: base.title, subtitle: base.subtitle, summary: saved };
+  }
+  return base;
+}
+function toggleProtocolEditor() {
+  if (currentMode !== 'library') return;
+  const editor = document.getElementById('protocol-editor');
+  const overrides = getProtocolOverrides();
+  const currentText = overrides[activeProtocolId] || TOOL_PROTOCOLS[activeProtocolId]?.summary || TOOL_PROTOCOLS[activeProtocolId]?.about || '';
+  document.getElementById('protocol-edit-text').value = currentText;
+  editor.style.display = editor.style.display === 'block' ? 'none' : 'block';
+}
+function cancelProtocolEdit() {
+  const editor = document.getElementById('protocol-editor');
+  if (editor) editor.style.display = 'none';
+}
+function saveProtocol() {
+  const text = document.getElementById('protocol-edit-text').value.trim();
+  if (!activeProtocolId) return;
+  const overrides = getProtocolOverrides();
+  if (text) overrides[activeProtocolId] = text;
+  else delete overrides[activeProtocolId];
+  saveProtocolOverrides(overrides);
+  cancelProtocolEdit();
+  showProtocol(activeProtocolId);
+}
+
 
 const TOOL_PROTOCOLS = {
   'bwa-mem': {
@@ -375,6 +477,7 @@ const TOOL_PROTOCOLS = {
   'bowtie2': {
     title: 'Bowtie2 — Fast DNA Alignment Protocol',
     subtitle: 'Efficient short-read alignment for genomics data.',
+    summary: 'Bowtie2 is a fast aligner for mapping short DNA sequencing reads against a reference genome, useful for rapid variant and coverage analysis.',
     about: 'Bowtie2 maps DNA reads to a reference using an FM-index for fast and memory-efficient searching.',
     why: 'Use it when you need rapid alignment of large DNA datasets with low resource usage.',
     data: 'Reads are aligned to indexed reference sequences, producing position and mismatch information.',
@@ -383,6 +486,7 @@ const TOOL_PROTOCOLS = {
   'gatk': {
     title: 'GATK HaplotypeCaller — Variant Calling Protocol',
     subtitle: 'Detect genetic variants from aligned DNA reads.',
+    summary: 'GATK HaplotypeCaller identifies SNPs and indels from aligned sequencing data to support downstream genomic interpretation.',
     about: 'GATK HaplotypeCaller uses local reassembly and statistical modeling to identify SNPs and indels.',
     why: 'It is used when accurate variant calling is needed for genomic analysis.',
     data: 'Aligned reads are examined in candidate regions, assembled into haplotypes, and scored for variant likelihood.',
@@ -391,6 +495,7 @@ const TOOL_PROTOCOLS = {
   'freebayes': {
     title: 'FreeBayes — Bayesian Variant Detection Protocol',
     subtitle: 'Sensitive variant discovery from sequence alignments.',
+    summary: 'FreeBayes calls variants by evaluating read evidence with Bayesian models, making it useful for flexible population and sample analyses.',
     about: 'FreeBayes uses Bayesian models to detect SNPs, indels, and complex variants in aligned DNA data.',
     why: 'Use it when flexible variant calling is required across samples or ploidy levels.',
     data: 'It analyzes read evidence at each site and computes the probability of alternative alleles.',
@@ -399,10 +504,65 @@ const TOOL_PROTOCOLS = {
   'vblast': {
     title: 'VBLAST / BLAST — Sequence Similarity Protocol',
     subtitle: 'Compare query sequences with reference databases.',
+    summary: 'BLAST finds similar sequences in reference databases to help identify gene function, homology, or variant support.',
     about: 'BLAST searches identify homologous sequences and functional matches using database alignment.',
     why: 'Use it to annotate unknown sequences and infer biological function.',
     data: 'The query sequence is aligned against reference entries, scoring matches and e-values.',
     output: 'The output is a ranked list of matching sequences for biological interpretation and annotation.'
+  },
+  'ngs-core': {
+    title: 'NGS-Core Pipeline — Sequencing Preparation Protocol',
+    subtitle: 'From raw reads to analysis-ready genomic data.',
+    summary: 'NGS-Core describes the standard sequencing preparation and processing steps needed to turn raw reads into usable aligned and QC’d data.',
+    about: 'This pipeline covers sample preparation, library QC, adapter trimming, alignment, and quality assessment for next-generation sequencing datasets.',
+    why: 'It is used to deliver clean, aligned sequence data for downstream variant calling and expression analysis.',
+    data: 'Raw sequencing reads are trimmed, filtered, and aligned before quality metrics are aggregated.',
+    output: 'The output is an analysis-ready read set with accompanying QC reports.'
+  },
+  'fastqc': {
+    title: 'FastQC / MultiQC — Quality Control Protocol',
+    subtitle: 'Inspect raw sequencing read quality before analysis.',
+    summary: 'FastQC checks read quality and MultiQC aggregates results so you can spot sequencing issues early.',
+    about: 'FastQC evaluates base quality, adapter contamination, and read length distributions in raw sequencing data.',
+    why: 'It is used to verify that sequencing runs are suitable for downstream analysis.',
+    data: 'Per-read and per-base metrics are calculated and summarized across samples.',
+    output: 'The output is a quality report that informs whether the data are analysis-ready.'
+  },
+  'adapter-trim': {
+    title: 'Adapter Trimming — Read Cleanup Protocol',
+    subtitle: 'Remove adapters and low-quality bases from sequencing reads.',
+    summary: 'Adapter trimming cleans raw reads by removing adapter sequences and low-quality tails before alignment.',
+    about: 'Trimming tools detect sequencing adapters and trim low-quality bases from read ends.',
+    why: 'It is used to improve alignment performance and reduce false-positive variant calls.',
+    data: 'Reads are scanned for adapter patterns and trimmed at low-quality regions.',
+    output: 'The output is a cleaned read set ready for alignment.'
+  },
+  'mutation-analysis': {
+    title: 'Mutation Analysis — Reference Comparison Protocol',
+    subtitle: 'Match query sequence to reference sites and identify variants.',
+    summary: 'Mutation analysis compares your sequence against reference databases like NCBI to find known mutations and report their potential impact.',
+    about: 'This technique matches query sequences against reference sites and analyzes variant positions for known mutation patterns.',
+    why: 'It is used to identify clinically relevant sequence changes and support variant interpretation.',
+    data: 'Query sequences are aligned to reference genomes and differences are annotated against mutation databases.',
+    output: 'The output is a mutation report showing matched variants and their likely significance.'
+  },
+  'gc-content': {
+    title: 'GC Content — Sequence Composition Protocol',
+    subtitle: 'Calculate GC percentage for a DNA sequence.',
+    summary: 'GC content reports how much of the DNA sequence consists of guanine and cytosine, a basic composition metric.',
+    about: 'This tool computes the percentage of G and C bases in a DNA sequence.',
+    why: 'It is used to estimate sequence stability and to compare sample composition.',
+    data: 'The base counts are summarized and expressed as a percentage of total sequence length.',
+    output: 'The output is a GC percentage and nucleotide composition summary.'
+  },
+  'cadd': {
+    title: 'CADD — Drug Design Insight Protocol',
+    subtitle: 'User-friendly view of complex compound scoring.',
+    summary: 'CADD helps predict which small molecules or drug candidates are likely to bind to protein targets, using simulation and scoring models.',
+    about: 'Computer-aided drug design evaluates compound structures and protein targets to estimate binding potential and selectivity.',
+    why: 'It is used to prioritize compounds for further experimental testing in drug discovery.',
+    data: 'Compounds are scored based on physicochemical properties, docking poses, and predicted interactions.',
+    output: 'The output is a ranked list of candidate molecules with user-friendly scoring guidance.'
   },
   'other-assembly': {
     title: 'Genome Assembly — Contig Reconstruction Protocol',
@@ -497,6 +657,14 @@ const modeParam = params.get('mode');
 const initialMode = modeParam === 'library' ? 'library' : 'analysis';
 setMode(initialMode);
 if (params.get('tab')) switchTab(params.get('tab'));
+if (initialMode === 'analysis') {
+  document.querySelector('.page-title').textContent = 'Analysis Workbench';
+  document.querySelector('.page-sub').textContent = 'Browse techniques and launch analysis workflows.';
+} else {
+  document.querySelector('.page-title').textContent = 'Technique Library';
+  document.querySelector('.page-sub').textContent = 'Browse protocol summaries and detailed technique descriptions.';
+}
+
 </script>
 </body>
 </html>
