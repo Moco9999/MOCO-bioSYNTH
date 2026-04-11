@@ -304,6 +304,10 @@
 </style>
 </head>
 <body>
+<script>
+  const existingUser = JSON.parse(localStorage.getItem('moco_user') || 'null');
+  if (existingUser) window.location.href = 'dashboard.html';
+</script>
 <div class="bg-grid"></div>
 <div class="bg-glow"></div>
 <div class="bg-glow2"></div>

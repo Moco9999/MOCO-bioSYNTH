@@ -122,6 +122,12 @@ function injectNav(activePage) {
     .topbar-nav a.protein:hover { background: rgba(191,95,255,0.1); border-color:rgba(191,95,255,0.2); }
 
     .topbar-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+    .logout-btn {
+      padding: 8px 14px; border-radius:999px; border:1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05); color: var(--text); font-family: var(--mono);
+      font-size:11px; letter-spacing:1px; cursor:pointer; transition:all 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.08); }
     .plan-badge {
       padding: 3px 10px; border-radius:20px; font-family:var(--mono);
       font-size:9px; letter-spacing:2px; text-transform:uppercase;
@@ -225,6 +231,7 @@ function injectNav(activePage) {
       <div class="status-dot"></div>
       <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">ONLINE</span>
       <div class="plan-badge">${plan}</div>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
       <div class="account-btn" onclick="toggleDropdown()" id="acct-btn">
         ${(user.name||'U')[0].toUpperCase()}
         <div class="account-dropdown" id="acct-dropdown">
