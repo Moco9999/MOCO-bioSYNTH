@@ -1,0 +1,71 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>MOCO — Lab</title><script src="nav.js"></script></head><body>
+<script>requireAuth();</script><script>injectNav('lab');</script>
+<div class="main-content">
+<style>
+.quick-launch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.ql-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all 0.2s}
+.ql-card:hover{transform:translateY(-2px)}
+.ql-card.dna:hover{border-color:var(--cyan);box-shadow:0 4px 20px rgba(0,229,255,0.1)}
+.ql-card.rna:hover{border-color:var(--green);box-shadow:0 4px 20px rgba(0,255,136,0.1)}
+.ql-card.protein:hover{border-color:var(--purple);box-shadow:0 4px 20px rgba(191,95,255,0.1)}
+.ql-name{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:6px}
+.ql-name.dna{color:var(--cyan)}.ql-name.rna{color:var(--green)}.ql-name.protein{color:var(--purple)}
+.ql-steps{font-size:11px;color:var(--text-dim)}
+.pipeline-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+.pipeline-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.pipeline-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.run-btn{padding:8px 20px;background:linear-gradient(135deg,var(--green),#00cc66);color:#050a0e;border:none;border-radius:8px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all 0.2s}
+.run-btn:hover{box-shadow:0 4px 15px rgba(0,255,136,0.3);transform:translateY(-1px)}
+.pipeline-nodes{display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:4px}
+.node{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;min-width:140px;text-align:center;position:relative}
+.node.active{border-color:var(--cyan);background:rgba(0,229,255,0.05);box-shadow:0 0 20px rgba(0,229,255,0.1)}
+.node.done{border-color:var(--green);background:rgba(0,255,136,0.05)}
+.node-name{font-size:12px;font-weight:600;margin-bottom:4px}
+.node-status{font-family:var(--mono);font-size:9px;letter-spacing:1px}
+.node-status.done{color:var(--green)}.node-status.running{color:var(--cyan)}.node-status.idle{color:var(--text-dim)}
+.arrow{color:var(--text-dim);padding:0 8px;font-size:18px;flex-shrink:0}
+.queue-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px}
+.queue-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.queue-item:last-child{border-bottom:none}
+.queue-dot{width:8px;height:8px;border-radius:50%;margin-right:12px;flex-shrink:0}
+.queue-dot.green{background:var(--green);box-shadow:0 0 8px var(--green)}
+.queue-dot.purple{background:var(--purple);box-shadow:0 0 8px var(--purple)}
+.queue-eta{font-family:var(--mono);font-size:11px;color:var(--text-dim)}
+</style>
+<div class="page-header">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div><div class="page-title">Lab Workbench</div><div class="page-sub">Build and manage analysis pipelines</div></div>
+    <button class="run-btn" onclick="alert('New Pipeline wizard coming soon!')">+ New Pipeline</button>
+  </div>
+</div>
+<div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">Quick Launch</div>
+<div class="quick-launch-grid">
+  <div class="ql-card dna"><div class="ql-name dna">DNA NGS Pipeline</div><div class="ql-steps">FastQC → Trim → Align → Call</div></div>
+  <div class="ql-card rna"><div class="ql-name rna">RNA Differential</div><div class="ql-steps">STAR → featureCounts → DESeq2</div></div>
+  <div class="ql-card rna"><div class="ql-name rna">3' READS Cardiac</div><div class="ql-steps">APA mapping → CSH → UTR dynamics</div></div>
+  <div class="ql-card protein"><div class="ql-name protein">Protein Structure</div><div class="ql-steps">AlphaFold → Docking → CADD</div></div>
+</div>
+<div class="pipeline-section">
+  <div class="pipeline-header">
+    <div class="pipeline-title"><span style="color:var(--cyan)">🧬</span> Active Pipeline — DNA Variant Calling</div>
+    <button class="run-btn">▶ Run</button>
+  </div>
+  <div class="pipeline-nodes">
+    <div class="node done"><div class="node-name">FASTQ Input</div><div class="node-status done">DONE</div></div>
+    <div class="arrow">→</div>
+    <div class="node done"><div class="node-name">Quality Control</div><div class="node-status done">DONE</div></div>
+    <div class="arrow">→</div>
+    <div class="node active"><div class="node-name">BWA-MEM Align</div><div class="node-status running">RUNNING</div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="node-name">GATK Variant Call</div><div class="node-status idle">IDLE</div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="node-name">VCF Output</div><div class="node-status idle">IDLE</div></div>
+  </div>
+</div>
+<div class="queue-section">
+  <div style="font-size:15px;font-weight:600;margin-bottom:16px">Job Queue</div>
+  <div class="queue-item"><div style="display:flex;align-items:center"><div class="queue-dot green"></div>3' READS HF Cohort B</div><div class="queue-eta">ETA ~4 min</div></div>
+  <div class="queue-item"><div style="display:flex;align-items:center"><div class="queue-dot green"></div>Smart-seq2 QC</div><div class="queue-eta">ETA ~11 min</div></div>
+  <div class="queue-item"><div style="display:flex;align-items:center"><div class="queue-dot purple"></div>Drug-Target Screen</div><div class="queue-eta">ETA ~28 min</div></div>
+</div>
+</div></body></html>

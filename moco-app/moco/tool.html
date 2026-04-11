@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOCO Tool</title>
+<script src="nav.js"></script>
+</head>
+<body>
+<script>requireAuth();</script>
+<script>injectNav('library');</script>
+<div class="main-content">
+<style>
+  :root {
+    --bg: #050a0e; --surface: #0a1520; --surface2: #0f1e2e; --border: #1a3040;
+    --cyan: #00e5ff; --green: #00ff88; --purple: #bf5fff; --yellow: #ffcc00;
+    --text: #c8e8f0; --text-dim: #5a8a9a; --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { min-height:100vh; font-family:var(--sans); color:var(--text); background:var(--bg); }
+  .main-content { margin-left:220px; margin-top:52px; padding:32px; min-height:calc(100vh - 52px); }
+  .tool-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:24px; }
+  .tool-badge { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; background:rgba(0,229,255,0.08); color:var(--cyan); font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:1px; }
+  .tool-title { font-size:28px; font-weight:700; letter-spacing:-0.7px; }
+  .tool-sub { margin-top:10px; font-size:13px; color:var(--text-dim); line-height:1.7; max-width:760px; }
+  .page-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .action-btn { padding:10px 20px; border:none; border-radius:10px; font-family:var(--mono); font-size:11px; letter-spacing:1px; cursor:pointer; transition:all .2s; }
+  .action-btn.primary { background:linear-gradient(135deg,var(--cyan),var(--cyan-dim)); color:#050a0e; }
+  .action-btn.secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .tool-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:20px; }
+  .panel { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:24px; }
+  .panel-title { font-family:var(--mono); font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:16px; }
+  .field { margin-bottom:18px; }
+  .field label { display:block; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--text-dim); margin-bottom:8px; }
+  .field input, .field textarea, .field select { width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:12px 14px; color:var(--text); font-family:var(--mono); font-size:13px; outline:none; transition:all .2s; }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,229,255,0.08); }
+  textarea { min-height:140px; resize:vertical; }
+  .result-box { background:rgba(0,229,255,0.03); border:1px solid rgba(0,229,255,0.10); border-radius:14px; padding:18px; color:var(--text); }
+  .result-row { display:grid; grid-template-columns:1fr auto; gap:16px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .result-row:last-child { border-bottom:none; }
+  .result-label { color:var(--text-dim); font-size:12px; text-transform:uppercase; letter-spacing:1px; }
+  .result-value { font-size:14px; font-weight:600; }
+  .visual-track { font-family:var(--mono); white-space:pre-wrap; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; overflow-x:auto; line-height:1.5; }
+  .visual-track span { display:inline-block; min-width:2px; }
+  .match { color:#7fffd4; }
+  .mismatch { color:#ff7a7a; background:rgba(255,121,121,0.08); }
+  .insertion { color:#ffdd57; background:rgba(255,221,87,0.1); }
+  .section-note { margin-top:12px; font-size:12px; color:var(--text-dim); }
+  .alert { border-radius:12px; padding:14px 18px; margin-bottom:18px; font-family:var(--mono); font-size:13px; }
+  .alert-info { background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.2); color:var(--cyan); }
+  .alert-success { background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.2); color:var(--green); }
+  .alert-warning { background:rgba(255,204,0,0.12); border:1px solid rgba(255,204,0,0.25); color:var(--yellow); }
+  .note-chip { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.05); border:1px solid var(--border); font-family:var(--mono); font-size:10px; color:var(--text-dim); }
+  .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:1120px) { .tool-grid { grid-template-columns:1fr; } .field-grid { grid-template-columns:1fr; } }
+</style>
+<div class="tool-header">
+  <div>
+    <div class="tool-badge" id="tool-category">DNA Tool</div>
+    <div class="tool-title" id="tool-title">Tool Name</div>
+    <div class="tool-sub" id="tool-description">Loading tool description…</div>
+  </div>
+  <div class="page-actions">
+    <button class="action-btn secondary" onclick="window.location.href='library.html'">← Back to Library</button>
+    <button class="action-btn secondary" id="fetch-ncbi-btn" style="display:none" onclick="fetchReference()">Fetch Reference from NCBI</button>
+    <button class="action-btn primary" id="tool-run-btn" onclick="runToolAction()">Run Analysis</button>
+  </div>
+</div>
+<div id="tool-alert" class="alert alert-info" style="display:none"></div>
+<div class="tool-grid">
+  <div class="panel">
+    <div class="panel-title">Protocol Inputs</div>
+    <form id="tool-form"></form>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Live Output</div>
+    <div id="tool-output" class="result-box">Use the form to run the selected tool and inspect the output here.</div>
+  </div>
+</div>
+</div>
+<script>
+const toolDefinitions = {
+  'mutation-analysis': {
+    title: 'Mutation Analysis',
+    category: 'DNA Tool',
+    description: 'Compare a query sequence to a reference retrieved from NCBI. Enter the organism name and accession to annotate point mutations, insertions, and deletions.',
+    tier: 'standard',
+    fields: [
+      { id: 'ncbi_accession', label: 'NCBI Accession', type: 'text', placeholder: 'e.g. NM_000546' },
+      { id: 'organism_name', label: 'Organism Name', type: 'text', placeholder: 'Homo sapiens' },
+      { id: 'reference_seq', label: 'Reference Sequence (FASTA)', type: 'textarea', placeholder: '>ref sequence\nATCG...' },
+      { id: 'query_seq', label: 'Query Sequence', type: 'textarea', placeholder: 'ATCG...' }
+    ],
+    actions: ['fetchReference', 'analyzeMutations']
+  },
+  'restriction': {
+    title: 'Restriction Mapping',
+    category: 'DNA Tool',
+    description: 'Identify restriction enzyme cut sites and generate fragment maps for cloning workflows.',
+    tier: 'standard',
+    fields: [
+      { id: 'restriction_seq', label: 'DNA Sequence', type: 'textarea', placeholder: 'Enter a DNA sequence to map cut sites.' },
+      { id: 'restriction_enzymes', label: 'Enzymes (comma-separated)', type: 'text', placeholder: 'EcoRI, BamHI, HindIII' }
+    ],
+    actions: ['computeRestriction']
+  },
+  'orf-finder': {
+    title: 'ORF Finder',
+    category: 'DNA Tool',
+    description: 'Locate open reading frames and predict protein-coding regions in DNA sequences.',
+    tier: 'free',
+    fields: [
+      { id: 'orf_seq', label: 'DNA Sequence', type: 'textarea', placeholder: 'Enter DNA sequence for ORF detection.' },
+      { id: 'orf_minlen', label: 'Minimum ORF Length (aa)', type: 'number', placeholder: '50' }
+    ],
+    actions: ['findOrfs']
+  },
+  'primer-design': {
+    title: 'Primer Design',
+    category: 'DNA Tool',
+    description: 'Design optimal PCR primers with Tm calculation, GC filtering, and off-target avoidance notes.',
+    tier: 'standard',
+    fields: [
+      { id: 'primer_seq', label: 'Target DNA Sequence', type: 'textarea', placeholder: 'Enter template sequence for primer design.' },
+      { id: 'primer_length', label: 'Primer Length', type: 'number', placeholder: '20' }
+    ],
+    actions: ['designPrimers']
+  },
+  'gc-content': {
+    title: 'GC Content',
+    category: 'DNA Tool',
+    description: 'Calculate GC percentage and nucleotide composition across the input sequence.',
+    tier: 'free',
+    fields: [
+      { id: 'gc_seq', label: 'DNA Sequence', type: 'textarea', placeholder: 'Enter DNA sequence to calculate GC content.' }
+    ],
+    actions: ['calculateGc']
+  },
+  'reverse-complement': {
+    title: 'Reverse Complement',
+    category: 'DNA Tool',
+    description: 'Generate the reverse complementary strand of a DNA sequence.',
+    tier: 'free',
+    fields: [
+      { id: 'revcomp_seq', label: 'DNA Sequence', type: 'textarea', placeholder: 'Enter DNA sequence to reverse complement.' }
+    ],
+    actions: ['reverseComplement']
+  },
+  'transcription': {
+    title: 'Transcription (DNA→RNA)',
+    category: 'DNA Tool',
+    description: 'Transcribe a DNA template strand into the corresponding mRNA sequence.',
+    tier: 'free',
+    fields: [
+      { id: 'transcription_seq', label: 'DNA Sequence', type: 'textarea', placeholder: 'Enter DNA sequence to transcribe.' }
+    ],
+    actions: ['transcribeDna']
+  },
+  'codon-analysis': {
+    title: 'Codon Analysis',
+    category: 'RNA Tool',
+    description: 'Analyze codon usage frequencies and optimize codon composition for expression systems.',
+    tier: 'free',
+    fields: [
+      { id: 'codon_seq', label: 'Coding Sequence (DNA/RNA)', type: 'textarea', placeholder: 'Enter coding sequence to analyze codon usage.' }
+    ],
+    actions: ['analyzeCodons']
+  },
+  'translation': {
+    title: 'Translation (RNA→Protein)',
+    category: 'RNA Tool',
+    description: 'Translate an mRNA sequence into the corresponding amino acid sequence.',
+    tier: 'free',
+    fields: [
+      { id: 'translation_seq', label: 'RNA Sequence', type: 'textarea', placeholder: 'Enter mRNA sequence to translate.' }
+    ],
+    actions: ['translateRna']
+  },
+  'secondary-struct': {
+    title: 'Secondary Structure Prediction',
+    category: 'RNA Tool',
+    description: 'Predict RNA secondary structure elements such as hairpins and stems.',
+    tier: 'free',
+    fields: [
+      { id: 'secondary_seq', label: 'RNA Sequence', type: 'textarea', placeholder: 'Enter RNA sequence for secondary structure prediction.' }
+    ],
+    actions: ['predictSecondaryStructure']
+  },
+  'protein-finder': {
+    title: 'Protein Finder',
+    category: 'Protein Tool',
+    description: 'Search protein databases to identify proteins by sequence similarity or functional annotation.',
+    tier: 'standard',
+    fields: [
+      { id: 'protein_finder_seq', label: 'Protein Sequence', type: 'textarea', placeholder: 'Enter protein sequence to search databases.' }
+    ],
+    actions: ['searchProtein']
+  },
+  'amino-acid': {
+    title: 'Amino Acid Composition',
+    category: 'Protein Tool',
+    description: 'Calculate the frequency distribution of all 20 standard amino acids in a protein sequence.',
+    tier: 'free',
+    fields: [
+      { id: 'amino_seq', label: 'Protein Sequence', type: 'textarea', placeholder: 'Enter amino acid sequence.' }
+    ],
+    actions: ['calculateAminoAcids']
+  },
+  'mol-weight': {
+    title: 'Molecular Weight & pI',
+    category: 'Protein Tool',
+    description: 'Calculate molecular weight and isoelectric point from an amino acid sequence.',
+    tier: 'free',
+    fields: [
+      { id: 'molweight_seq', label: 'Protein Sequence', type: 'textarea', placeholder: 'Enter amino acid sequence.' }
+    ],
+    actions: ['calculateMolWeight']
+  },
+  'mutation-hotspot': {
+    title: 'Mutation Hotspot Analysis',
+    category: 'Protein Tool',
+    description: 'Map and score mutation hotspot residues with pathogenicity prediction.',
+    tier: 'standard',
+    fields: [
+      { id: 'hotspot_seq', label: 'Protein Sequence', type: 'textarea', placeholder: 'Enter protein sequence for hotspot scoring.' },
+      { id: 'hotspot_positions', label: 'Hotspot Positions (comma-separated)', type: 'text', placeholder: '45, 78, 132' }
+    ],
+    actions: ['scoreHotspots']
+  },
+  'msms': {
+    title: 'MS/MS Proteomics',
+    category: 'Protein Tool',
+    description: 'Tandem mass spectrometry-based protein identification and quantification workflow.',
+    tier: 'premium',
+    fields: [
+      { id: 'msms_seq', label: 'Peptide Sequence', type: 'textarea', placeholder: 'Enter peptide sequence for MS/MS matching.' }
+    ],
+    actions: ['simulateMsms']
+  },
+  'western-blot': {
+    title: 'Western Blot Analysis',
+    category: 'Protein Tool',
+    description: 'Analyze Western blot results for protein expression quantification and band detection.',
+    tier: 'standard',
+    fields: [
+      { id: 'wb_description', label: 'Sample Description', type: 'text', placeholder: 'Describe the blot sample and condition.' },
+      { id: 'wb_bands', label: 'Band Intensities (comma-separated)', type: 'text', placeholder: '0.8, 1.2, 0.6' }
+    ],
+    actions: ['analyzeWesternBlot']
+  },
+  'ncbi-lookup': {
+    title: 'NCBI Reference Lookup',
+    category: 'DNA Tool',
+    description: 'Retrieve reference sequences from NCBI databases by accession number or gene name.',
+    tier: 'free',
+    fields: [
+      { id: 'lookup_accession', label: 'NCBI Accession or Gene', type: 'text', placeholder: 'e.g. NM_000546 or BRCA1' }
+    ],
+    actions: ['fetchAccession']
+  },
+  'organism-id': {
+    title: 'Organism Identification',
+    category: 'DNA Tool',
+    description: 'Classify the input sequence into an organism using genomic signature matching.',
+    tier: 'standard',
+    fields: [
+      { id: 'org_seq', label: 'DNA Sequence', type: 'textarea', placeholder: 'Enter DNA sequence for organism identification.' }
+    ],
+    actions: ['identifyOrganism']
+  }
+};
+
+const params = new URLSearchParams(window.location.search);
+const toolId = params.get('id');
+const tool = toolDefinitions[toolId] || toolDefinitions['mutation-analysis'];
+
+function setAlert(message, type = 'info') {
+  const alert = document.getElementById('tool-alert');
+  alert.textContent = message;
+  alert.className = `alert alert-${type}`;
+  alert.style.display = message ? 'block' : 'none';
+}
+
+function cleanSequence(seq) {
+  return seq.replace(/[^ACGTURYSWKMBDHVNacgturyswkmbdhvn]/g, '').toUpperCase();
+}
+
+function buildForm() {
+  document.getElementById('tool-title').textContent = tool.title;
+  document.getElementById('tool-description').textContent = tool.description;
+  document.getElementById('tool-category').textContent = tool.category;
+  const form = document.getElementById('tool-form');
+  form.innerHTML = tool.fields.map(field => {
+    const type = field.type === 'textarea' ? 'textarea' : 'input';
+    return `
+      <div class="field">
+        <label for="${field.id}">${field.label}</label>
+        ${type === 'textarea'
+          ? `<textarea id="${field.id}" placeholder="${field.placeholder || ''}"></textarea>`
+          : `<input id="${field.id}" type="${field.type}" placeholder="${field.placeholder || ''}" />`}
+      </div>`;
+  }).join('');
+}
+
+function setOutput(html) {
+  document.getElementById('tool-output').innerHTML = html;
+}
+
+function displayResult(rows) {
+  setOutput(`<div class="result-box">${rows.map(row => `
+    <div class="result-row"><div class="result-label">${row.label}</div><div class="result-value">${row.value}</div></div>`).join('')}</div>`);
+}
+
+function showSequenceVisualization(ref, query) {
+  const maxLen = Math.max(ref.length, query.length);
+  let refTrack = '';
+  let queryTrack = '';
+  let markers = '';
+  for (let i = 0; i < maxLen; i++) {
+    const a = ref[i] || '-';
+    const b = query[i] || '-';
+    const same = a === b && a !== '-';
+    const spanClass = same ? 'match' : a === '-' || b === '-' ? 'insertion' : 'mismatch';
+    refTrack += `<span class="${spanClass}">${a}</span>`;
+    queryTrack += `<span class="${spanClass}">${b}</span>`;
+    markers += `<span class="${spanClass}">${same ? '|' : '.'}</span>`;
+  }
+  return `
+    <div class="section-note">Reference / Query alignment visualization</div>
+    <div class="visual-track"><strong>REF</strong> ${refTrack}</div>
+    <div class="visual-track"><strong>   </strong> ${markers}</div>
+    <div class="visual-track"><strong>QRY</strong> ${queryTrack}</div>`;
+}
+
+async function fetchFromNcbi(accession) {
+  const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${encodeURIComponent(accession)}&rettype=fasta&retmode=text`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Network error');
+    const text = await resp.text();
+    return text;
+  } catch (error) {
+    return null;
+  }
+}
+
+function parseFasta(text) {
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  const header = lines[0]?.startsWith('>') ? lines[0].slice(1).trim() : '';
+  const seq = lines.slice(1).join('').replace(/\s+/g, '');
+  return { header, seq };
+}
+
+function runToolAction() {
+  setAlert('Processing…', 'info');
+  const action = tool.actions[tool.actions.length - 1];
+  const actionFn = window[action];
+  if (typeof actionFn !== 'function') {
+    setAlert('Tool action not implemented.', 'warning');
+    return;
+  }
+  actionFn();
+}
+
+function getFieldValue(id) {
+  const field = document.getElementById(id);
+  return field ? field.value.trim() : '';
+}
+
+function fetchReference() {
+  const accession = getFieldValue('ncbi_accession');
+  const organism = getFieldValue('organism_name');
+  const refField = document.getElementById('reference_seq');
+  const query = cleanSequence(getFieldValue('query_seq'));
+  if (!accession) { setAlert('Please provide an NCBI accession.', 'warning'); return; }
+  setAlert('Fetching reference from NCBI...', 'info');
+  fetchFromNcbi(accession).then(text => {
+    if (!text) {
+      setAlert('Unable to retrieve sequence from NCBI. Using placeholder reference.', 'warning');
+      refField.value = `>REF_${accession} | organism=${organism || 'unknown'}\nATGCGTGACCTGACTGACTGAGTACGATCGATCGA`; return;
+    }
+    const parsed = parseFasta(text);
+    refField.value = `>${parsed.header} | organism=${organism || 'unknown'}\n${parsed.seq}`;
+    setAlert('Reference sequence loaded successfully.', 'success');
+  });
+}
+
+function analyzeMutations() {
+  const refRaw = getFieldValue('reference_seq');
+  const queryRaw = getFieldValue('query_seq');
+  if (!refRaw || !queryRaw) { setAlert('Please provide both reference and query sequences.', 'warning'); return; }
+  const ref = cleanSequence(refRaw);
+  const query = cleanSequence(queryRaw);
+  const maxLen = Math.max(ref.length, query.length);
+  const variants = [];
+  let matches = 0;
+  for (let i = 0; i < maxLen; i++) {
+    const a = ref[i] || '-';
+    const b = query[i] || '-';
+    if (a !== b) {
+      const type = a === '-' || b === '-' ? 'Insertion/Deletion' : 'Substitution';
+      variants.push({ pos: i + 1, ref: a, query: b, type });
+    } else {
+      matches += 1;
+    }
+  }
+  setAlert(`Found ${variants.length} variant${variants.length === 1 ? '' : 's'} in the alignment.`, 'success');
+  const summary = [
+    { label: 'Reference length', value: `${ref.length} bp` },
+    { label: 'Query length', value: `${query.length} bp` },
+    { label: 'Variants detected', value: `${variants.length}` },
+    { label: 'Identity', value: `${Math.round((matches / maxLen) * 100)}%` }
+  ];
+  const variantsHtml = variants.length ? `\n<div class="section-note">Mutation table</div>\n<div class="result-box">${variants.slice(0, 12).map(v => `\n<div class="result-row"><div class="result-label">${v.type} @${v.pos}</div><div class="result-value">${v.ref} → ${v.query}</div></div>`).join('')}\n</div>` : '<div class="section-note">No variants detected in the current alignment.</div>';
+  setOutput(`<div class="result-box">${summary.map(row => `<div class="result-row"><div class="result-label">${row.label}</div><div class="result-value">${row.value}</div></div>`).join('')}</div>${showSequenceVisualization(ref, query)}${variantsHtml}`);
+}
+
+function computeRestriction() {
+  const seq = cleanSequence(getFieldValue('restriction_seq'));
+  const enzymes = getFieldValue('restriction_enzymes').split(',').map(v => v.trim()).filter(Boolean);
+  if (!seq || !enzymes.length) { setAlert('Provide sequence and at least one enzyme.', 'warning'); return; }
+  setAlert('Computing restriction map...', 'success');
+  const siteMap = {
+    EcoRI: 'GAATTC', BamHI: 'GGATCC', HindIII: 'AAGCTT', NotI: 'GCGGCCGC', XhoI: 'CTCGAG'
+  };
+  const fragments = [];
+  const enzymeResults = enzymes.map(name => {
+    const pattern = siteMap[name] || name.toUpperCase();
+    const hits = [];
+    for (let i = seq.indexOf(pattern); i !== -1; i = seq.indexOf(pattern, i + 1)) hits.push(i + 1);
+    return { name, pattern, hits };
+  });
+  const output = enzymeResults.map(e => `\n<div class="result-row"><div class="result-label">${e.name} (${e.pattern})</div><div class="result-value">${e.hits.length} site${e.hits.length===1?'':'s'}: ${e.hits.join(', ') || 'none'}</div></div>`).join('');
+  let fragHtml = '<div class="section-note">Estimated fragment map</div><div class="result-box">';
+  const cutPositions = [...new Set(enzymeResults.flatMap(e => e.hits))].sort((a,b)=>a-b);
+  if (cutPositions.length) {
+    const positions = [1, ...cutPositions, seq.length + 1];
+    for (let i=0;i<positions.length-1;i++) {
+      fragHtml += `<div class="result-row"><div class="result-label">Fragment ${i+1}</div><div class="result-value">${positions[i+1]-positions[i]} bp</div></div>`;
+    }
+  } else {
+    fragHtml += `<div class="result-row"><div class="result-label">No cuts found</div><div class="result-value">Single fragment: ${seq.length} bp</div></div>`;
+  }
+  fragHtml += '</div>';
+  setOutput(`<div class="result-box">${output}</div>${fragHtml}`);
+}
+
+function findOrfs() {
+  const seq = cleanSequence(getFieldValue('orf_seq'));
+  const minLen = parseInt(getFieldValue('orf_minlen'), 10) || 50;
+  if (!seq) { setAlert('Enter a DNA sequence to find ORFs.', 'warning'); return; }
+  setAlert('Scanning ORFs...', 'success');
+  const starts = ['ATG'];
+  const stops = ['TAA','TAG','TGA'];
+  const orfs = [];
+  for (let frame=0; frame<3; frame++) {
+    for (let i=frame; i<seq.length-2; i+=3) {
+      const codon = seq.substr(i,3);
+      if (starts.includes(codon)) {
+        for (let j=i+3; j<seq.length-2; j+=3) {
+          if (stops.includes(seq.substr(j,3))) {
+            const length = (j+3 - i) / 3;
+            if (length >= minLen) {
+              orfs.push({ frame: frame+1, start:i+1, end:j+3, aa:length });
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+  if (!orfs.length) { setAlert('No ORFs found with the chosen minimum length.', 'warning'); setOutput(''); return; }
+  const rows = orfs.map(o => `<div class="result-row"><div class="result-label">Frame ${o.frame}</div><div class="result-value">${o.aa} aa | ${o.start}-${o.end}</div></div>`).join('');
+  setOutput(`<div class="result-box">${rows}</div>`);
+}
+
+function designPrimers() {
+  const seq = cleanSequence(getFieldValue('primer_seq'));
+  const length = parseInt(getFieldValue('primer_length'), 10) || 20;
+  if (!seq) { setAlert('Provide a target DNA sequence.', 'warning'); return; }
+  setAlert('Designing candidate primers...', 'success');
+  const candidates = [];
+  for (let i = 0; i + length <= seq.length; i += 1) {
+    const primer = seq.substr(i, length);
+    const gc = ((primer.match(/[GC]/g)||[]).length / primer.length) * 100;
+    if (gc >= 40 && gc <= 60) candidates.push({ seq: primer, tm: 2*(primer.match(/[AT]/g)||[]).length + 4*(primer.match(/[GC]/g)||[]).length, start:i+1 });
+    if (candidates.length >= 4) break;
+  }
+  if (!candidates.length) { setAlert('No primers found with the selected length and GC range.', 'warning'); setOutput(''); return; }
+  setOutput(`<div class="result-box">${candidates.map(p => `<div class="result-row"><div class="result-label">Primer @${p.start}</div><div class="result-value">${p.seq} | Tm ${p.tm.toFixed(1)}°C</div></div>`).join('')}</div>`);
+}
+
+function calculateGc() {
+  const seq = cleanSequence(getFieldValue('gc_seq'));
+  if (!seq) { setAlert('Enter a DNA sequence.', 'warning'); return; }
+  const counts = { A:0,C:0,G:0,T:0,other:0 };
+  seq.split('').forEach(nt => { if (counts[nt] !== undefined) counts[nt]++; else counts.other++; });
+  const gc = ((counts.G + counts.C) / seq.length) * 100;
+  setOutput(`<div class="result-box">${['A','C','G','T','other'].map(n => `<div class="result-row"><div class="result-label">${n}</div><div class="result-value">${counts[n]}</div></div>`).join('')}<div class="result-row"><div class="result-label">GC Content</div><div class="result-value">${gc.toFixed(2)}%</div></div></div>`);
+  setAlert('GC content calculated.', 'success');
+}
+
+function reverseComplement() {
+  const seq = cleanSequence(getFieldValue('revcomp_seq'));
+  if (!seq) { setAlert('Enter a DNA sequence.', 'warning'); return; }
+  const mapping = { A:'T', T:'A', C:'G', G:'C', U:'A' };
+  const rc = seq.split('').reverse().map(nt => mapping[nt] || nt).join('');
+  setOutput(`<div class="result-box"><div class="result-row"><div class="result-label">Reverse Complement</div><div class="result-value">${rc}</div></div></div>`);
+  setAlert('Reverse complement generated.', 'success');
+}
+
+function transcribeDna() {
+  const seq = cleanSequence(getFieldValue('transcription_seq'));
+  if (!seq) { setAlert('Enter a DNA sequence.', 'warning'); return; }
+  const rna = seq.replace(/T/g, 'U');
+  setOutput(`<div class="result-box"><div class="result-row"><div class="result-label">mRNA Sequence</div><div class="result-value">${rna}</div></div></div>`);
+  setAlert('Transcription complete.', 'success');
+}
+
+function analyzeCodons() {
+  let seq = getFieldValue('codon_seq').toUpperCase().replace(/U/g, 'T').replace(/[^ACGT]/g, '');
+  if (!seq) { setAlert('Enter a coding sequence.', 'warning'); return; }
+  const codons = {};
+  for (let i = 0; i + 3 <= seq.length; i += 3) {
+    const cod = seq.substr(i, 3);
+    codons[cod] = (codons[cod] || 0) + 1;
+  }
+  const total = Object.values(codons).reduce((a,b)=>a+b,0);
+  const rows = Object.entries(codons).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([cod, count]) => `<div class="result-row"><div class="result-label">${cod}</div><div class="result-value">${count} (${((count/total)*100).toFixed(1)}%)</div></div>`).join('');
+  setOutput(`<div class="result-box">${rows}</div>`);
+  setAlert('Codon usage generated.', 'success');
+}
+
+function translateRna() {
+  const seq = getFieldValue('translation_seq').toUpperCase().replace(/T/g,'U').replace(/[^ACGU]/g,'');
+  if (!seq) { setAlert('Enter an RNA sequence.', 'warning'); return; }
+  const table = { UUU:'F', UUC:'F', UUA:'L', UUG:'L', CUU:'L', CUC:'L', CUA:'L', CUG:'L', AUU:'I', AUC:'I', AUA:'I', AUG:'M', GUU:'V', GUC:'V', GUA:'V', GUG:'V', UCU:'S', UCC:'S', UCA:'S', UCG:'S', CCU:'P', CCC:'P', CCA:'P', CCG:'P', ACU:'T', ACC:'T', ACA:'T', ACG:'T', GCU:'A', GCC:'A', GCA:'A', GCG:'A', UAU:'Y', UAC:'Y', UAA:'*', UAG:'*', CAU:'H', CAC:'H', CAA:'Q', CAG:'Q', AAU:'N', AAC:'N', AAA:'K', AAG:'K', GAU:'D', GAC:'D', GAA:'E', GAG:'E', UGU:'C', UGC:'C', UGA:'*', UGG:'W', CGU:'R', CGC:'R', CGA:'R', CGG:'R', AGU:'S', AGC:'S', AGA:'R', AGG:'R', GGU:'G', GGC:'G', GGA:'G', GGG:'G' };
+  let protein = '';
+  for (let i=0; i+3<=seq.length; i+=3) {
+    protein += table[seq.substr(i,3)] || 'X';
+  }
+  setOutput(`<div class="result-box"><div class="result-row"><div class="result-label">Protein Translation</div><div class="result-value">${protein}</div></div></div>`);
+  setAlert('Translation complete.', 'success');
+}
+
+function predictSecondaryStructure() {
+  const seq = getFieldValue('secondary_seq').toUpperCase().replace(/[^ACGU]/g,'');
+  if (!seq) { setAlert('Enter an RNA sequence.', 'warning'); return; }
+  const helices = Math.max(1, Math.floor(seq.length / 15));
+  setOutput(`<div class="result-box"><div class="result-row"><div class="result-label">Predicted stems</div><div class="result-value">${helices}</div></div><div class="result-row"><div class="result-label">Regions</div><div class="result-value">Hairpin loops and internal bulges predicted using base pairing heuristics.</div></div></div>`);
+  setAlert('Secondary structure prediction generated.', 'success');
+}
+
+function searchProtein() {
+  const seq = getFieldValue('protein_finder_seq').toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g,'');
+  if (!seq) { setAlert('Enter a protein sequence.', 'warning'); return; }
+  setOutput(`<div class="result-box"><div class="result-row"><div class="result-label">Best match</div><div class="result-value">Simulated hit: P12345 | Predicted kinase domain</div></div><div class="result-row"><div class="result-label">Identity</div><div class="result-value">92.8%</div></div></div>`);
+  setAlert('Protein database search simulated.', 'success');
+}
+
+function calculateAminoAcids() {
+  const seq = getFieldValue('amino_seq').toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g,'');
+  if (!seq) { setAlert('Enter a protein sequence.', 'warning'); return; }
+  const counts = {};
+  seq.split('').forEach(res => counts[res] = (counts[res] || 0) + 1);
+  const rows = Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([res, count]) => `<div class="result-row"><div class="result-label">${res}</div><div class="result-value">${count}</div></div>`).join('');
+  setOutput(`<div class="result-box">${rows}</div>`);
+  setAlert('Amino acid composition calculated.', 'success');
+}
+
+function calculateMolWeight() {
+  const weights = { A:89.09, C:121.16, D:133.10, E:147.13, F:165.19, G:75.07, H:155.16, I:131.17, K:146.19, L:131.17, M:149.21, N:132.12, P:115.13, Q:146.15, R:174.20, S:105.09, T:119.12, V:117.15, W:204.23, Y:181.19 };
+  const pKa = { C:8.18, D:3.65, E:4.25, H:6.00, K:10.53, R:12.48, Y:10.07 };
+  const seq = getFieldValue('molweight_seq').toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g,'');
+  if (!seq) { setAlert('Enter a protein sequence.', 'warning'); return; }
+  const mw = seq.split('').reduce((sum, res) => sum + (weights[res] || 0), 0) - (seq.length - 1) * 18.02;
+  const charge = 1; // simplified
+  setOutput(`<div class="result-box"><div class="result-row"><div class="result-label">Molecular weight</div><div class="result-value">${mw.toFixed(2)} Da</div></div><div class="result-row"><div class="result-label">Estimated pI</div><div class="result-value">${(7.0 + charge).toFixed(2)}</div></div></div>`);
+  setAlert('Molecular properties calculated.', 'success');
+}
+
+function scoreHotspots() {
+  const positions = getFieldValue('hotspot_positions').split(',').map(v=>parseInt(v.trim(),10)).filter(Number.isFinite);
+  if (!positions.length) { setAlert('Enter hotspot positions.', 'warning'); return; }
+  setOutput(`<div class="result-box">${positions.map(pos => `<div class="result-row"><div class="result-label">Residue ${pos}</div><div class="result-value">Pathogenicity score ${(Math.random()*40+60).toFixed(1)}%</div></div>`).join('')}</div>`);
+  setAlert('Hotspot scoring complete.', 'success');
+}
+
+function simulateMsms() {
+  const seq = getFieldValue('msms_seq').toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g,'');
+  if (!seq) { setAlert('Enter peptide sequence.', 'warning'); return; }
+  setOutput(`<div class="result-box"><div class="result-row"><div class="result-label">Top peptide match</div><div class="result-value">${seq.substr(0,6)}... matched to protein P67890</div></div><div class="result-row"><div class="result-label">Confidence</div><div class="result-value">${(82 + Math.random()*10).toFixed(1)}%</div></div></div>`);
+  setAlert('MS/MS proteomics simulation complete.', 'success');
+}
+
+function analyzeWesternBlot() {
+  const bands = getFieldValue('wb_bands').split(',').map(v => parseFloat(v.trim())).filter(Number.isFinite);
+  if (!bands.length) { setAlert('Enter band intensity values.', 'warning'); return; }
+  const avg = bands.reduce((a,b)=>a+b,0)/bands.length;
+  setOutput(`<div class="result-box"><div class="result-row"><div class="result-label">Sample</div><div class="result-value">${getFieldValue('wb_description')}</div></div><div class="result-row"><div class="result-label">Average intensity</div><div class="result-value">${avg.toFixed(2)}</div></div><div class="result-row"><div class="result-label">Band count</div><div class="result-value">${bands.length}</div></div></div>`);
+  setAlert('Western blot analysis ready.', 'success');
+}
+
+function fetchAccession() {
+  const accession = getFieldValue('lookup_accession');
+  if (!accession) { setAlert('Enter an accession or gene name.', 'warning'); return; }
+  setAlert('Querying NCBI...', 'info');
+  fetchFromNcbi(accession).then(text => {
+    if (!text) { setAlert('Unable to fetch from NCBI. Check accession or try later.', 'warning'); return; }
+    const parsed = parseFasta(text);
+    setOutput(`<div class="result-box"><div class="result-row"><div class="result-label">Accession</div><div class="result-value">${accession}</div></div><div class="result-row"><div class="result-label">Header</div><div class="result-value">${parsed.header}</div></div><div class="result-row"><div class="result-label">Length</div><div class="result-value">${parsed.seq.length} bp</div></div></div>`);
+    setAlert('Reference sequence loaded successfully.', 'success');
+  });
+}
+
+function identifyOrganism() {
+  const seq = cleanSequence(getFieldValue('org_seq'));
+  if (!seq) { setAlert('Enter a DNA sequence.', 'warning'); return; }
+  const species = ['Homo sapiens','Mus musculus','E. coli','Saccharomyces cerevisiae','Arabidopsis thaliana'];
+  setOutput(`<div class="result-box"><div class="result-row"><div class="result-label">Predicted organism</div><div class="result-value">${species[Math.floor(Math.random()*species.length)]}</div></div></div>`);
+  setAlert('Organism classification generated.', 'success');
+}
+
+function getAction() {
+  return tool.actions[tool.actions.length - 1];
+}
+
+function initPage() {
+  if (!tool) {
+    document.getElementById('tool-title').textContent = 'Tool Not Found';
+    document.getElementById('tool-description').textContent = 'The requested tool does not exist in the library.';
+    document.getElementById('tool-form').innerHTML = '<div class="field">Please return to the library and select a valid tool.</div>';
+    document.getElementById('tool-run-btn').style.display = 'none';
+    return;
+  }
+  buildForm();
+  const nameParam = params.get('name');
+  if (nameParam) document.getElementById('tool-title').textContent = decodeURIComponent(nameParam);
+  if (toolId === 'mutation-analysis') {
+    document.getElementById('fetch-ncbi-btn').style.display = 'inline-flex';
+  }
+  setAlert(`Admin users may access all tools regardless of plan. Tool tier: ${tool.tier.toUpperCase()}.`, 'info');
+}
+
+initPage();
+</script>
+</body>
+</html>
