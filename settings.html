@@ -1,0 +1,146 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>MOCO — Settings</title><script src="nav.js"></script></head><body>
+<script>requireAuth();</script><script>injectNav('settings');</script>
+<div class="main-content">
+<style>
+.settings-layout{display:grid;grid-template-columns:200px 1fr;gap:24px}
+.settings-nav{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px;height:fit-content}
+.settings-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text-dim);transition:all 0.2s}
+.settings-nav-item:hover{background:var(--surface2);color:var(--text)}
+.settings-nav-item.active{background:rgba(0,229,255,0.08);color:var(--cyan)}
+.settings-content{display:none}
+.settings-content.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.card-sub{font-size:12px;color:var(--text-dim);margin-bottom:20px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.form-group label{display:block;font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
+.form-group input,.form-group select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:all 0.2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--cyan)}
+.save-btn{padding:10px 24px;background:linear-gradient(135deg,var(--cyan),var(--cyan-dim));color:#050a0e;border:none;border-radius:8px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.2s}
+.save-btn:hover{box-shadow:0 8px 25px rgba(0,229,255,0.3);transform:translateY(-1px)}
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.theme-opt{border:2px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all 0.2s;text-align:center}
+.theme-opt:hover{border-color:var(--cyan)}
+.theme-opt.selected{border-color:var(--cyan);background:rgba(0,229,255,0.05)}
+.theme-preview{height:60px;border-radius:6px;margin-bottom:10px}
+.theme-name{font-size:12px;font-weight:600}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-info .tname{font-size:13px;font-weight:500}
+.toggle-info .tdesc{font-size:11px;color:var(--text-dim);margin-top:2px}
+.toggle{width:44px;height:24px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;position:relative;cursor:pointer;transition:all 0.2s}
+.toggle.on{background:var(--cyan);border-color:var(--cyan)}
+.toggle-knob{width:18px;height:18px;background:#fff;border-radius:50%;position:absolute;top:2px;left:3px;transition:all 0.2s}
+.toggle.on .toggle-knob{left:23px}
+</style>
+<div class="page-header"><div class="page-title">Settings</div><div class="page-sub">Manage your account and preferences</div></div>
+<div class="settings-layout">
+  <div class="settings-nav">
+    <div class="settings-nav-item active" onclick="switchSettings('profile')">👤 Profile</div>
+    <div class="settings-nav-item" onclick="switchSettings('appearance')">🎨 Appearance</div>
+    <div class="settings-nav-item" onclick="switchSettings('settings')">⚙️ Settings</div>
+    <div class="settings-nav-item" onclick="switchSettings('help')">❓ Help</div>
+  </div>
+  <div>
+    <!-- PROFILE -->
+    <div class="settings-content active" id="sc-profile">
+      <div class="card">
+        <div class="card-title">Profile Information</div>
+        <div class="card-sub">Update your research profile and contact details.</div>
+        <div class="form-row">
+          <div class="form-group"><label>Full Name</label><input type="text" id="p-name" /></div>
+          <div class="form-group"><label>Email</label><input type="email" id="p-email" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Institution</label><input type="text" id="p-inst" placeholder="University / Lab" /></div>
+          <div class="form-group"><label>Role</label><input type="text" id="p-role" placeholder="e.g. PhD Student, PI" /></div>
+        </div>
+        <button class="save-btn" onclick="saveProfile()">Save Profile</button>
+      </div>
+    </div>
+
+    <!-- APPEARANCE -->
+    <div class="settings-content" id="sc-appearance">
+      <div class="card">
+        <div class="card-title">Theme</div>
+        <div class="card-sub">Choose your preferred interface theme.</div>
+        <div class="theme-grid">
+          <div class="theme-opt selected" onclick="setTheme('dark',this)">
+            <div class="theme-preview" style="background:linear-gradient(135deg,#050a0e,#0a1520);border:1px solid #1a3040"></div>
+            <div class="theme-name">Dark Ocean</div>
+          </div>
+          <div class="theme-opt" onclick="setTheme('darker',this)">
+            <div class="theme-preview" style="background:linear-gradient(135deg,#000,#0a0e16);border:1px solid #111"></div>
+            <div class="theme-name">Pure Black</div>
+          </div>
+          <div class="theme-opt" onclick="setTheme('teal',this)">
+            <div class="theme-preview" style="background:linear-gradient(135deg,#001016,#001d25);border:1px solid #164e5e"></div>
+            <div class="theme-name">Deep Teal</div>
+          </div>
+        </div>
+        <button class="save-btn">Apply Theme</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="settings-content" id="sc-settings">
+      <div class="card">
+        <div class="card-title">Platform Settings</div>
+        <div class="card-sub">Configure your MOCO platform behavior.</div>
+        <div class="toggle-row"><div class="toggle-info"><div class="tname">Email Notifications</div><div class="tdesc">Get notified when jobs complete</div></div><div class="toggle on" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div></div>
+        <div class="toggle-row"><div class="toggle-info"><div class="tname">Auto-save Workflows</div><div class="tdesc">Automatically save pipeline configurations</div></div><div class="toggle on" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div></div>
+        <div class="toggle-row"><div class="toggle-info"><div class="tname">Data Compression</div><div class="tdesc">Compress output files to save storage</div></div><div class="toggle" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div></div>
+        <div class="toggle-row"><div class="toggle-info"><div class="tname">Beta Features</div><div class="tdesc">Access experimental tools and features</div></div><div class="toggle" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div></div>
+      </div>
+    </div>
+
+    <!-- HELP -->
+    <div class="settings-content" id="sc-help">
+      <div class="card">
+        <div class="card-title">Help & Documentation</div>
+        <div class="card-sub">Resources to help you get the most out of MOCO.</div>
+        ${[['📖 Documentation','Complete platform guides and tool references'],['🎓 Tutorials','Step-by-step analysis walkthroughs'],['💬 Community Forum','Connect with other MOCO researchers'],['🐛 Report a Bug','Help us improve the platform'],['📧 Contact Support','Get direct help from the team']].map(([t,d])=>`
+          <div class="toggle-row" style="cursor:pointer" onclick="alert('Coming soon!')">
+            <div class="toggle-info"><div class="tname">${t}</div><div class="tdesc">${d}</div></div>
+            <span style="color:var(--text-dim)">→</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function switchSettings(tab) {
+  document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+  document.querySelectorAll('.settings-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('sc-'+tab).classList.add('active');
+}
+function setTheme(theme, el) {
+  document.querySelectorAll('.theme-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function saveProfile() {
+  alert('Profile saved!');
+}
+// Load user data
+const user = getUser();
+if (user) {
+  if (document.getElementById('p-name')) document.getElementById('p-name').value = user.name || '';
+  if (document.getElementById('p-email')) document.getElementById('p-email').value = user.email || '';
+  if (document.getElementById('p-inst')) document.getElementById('p-inst').value = user.institution || '';
+}
+// Check URL params
+const params = new URLSearchParams(window.location.search);
+if (params.get('tab')) {
+  const tabs = {profile:'profile',appearance:'appearance',settings:'settings',help:'help'};
+  const tab = tabs[params.get('tab')];
+  if (tab) {
+    document.querySelectorAll('.settings-nav-item').forEach((i,idx) => i.classList.toggle('active', ['profile','appearance','settings','help'][idx]===tab));
+    document.querySelectorAll('.settings-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('sc-'+tab).classList.add('active');
+  }
+}
+</script>
+</body></html>

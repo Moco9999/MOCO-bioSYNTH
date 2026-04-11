@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOCO — Admin Panel</title>
+<script src="nav.js"></script>
+</head>
+<body>
+<script>
+requireAuth();
+if (!isAdmin()) { alert('Admin access required.'); window.location.href = 'dashboard.html'; }
+</script>
+<script>injectNav('admin');</script>
+
+<div class="main-content">
+<style>
+  .admin-tabs { display:flex; gap:8px; margin-bottom:28px; border-bottom:1px solid var(--border); padding-bottom:0; }
+  .admin-tab {
+    padding:10px 20px; font-family:var(--mono); font-size:11px; letter-spacing:2px;
+    text-transform:uppercase; cursor:pointer; color:var(--text-dim);
+    border-bottom:2px solid transparent; margin-bottom:-1px; transition:all 0.2s;
+  }
+  .admin-tab.active { color:var(--yellow); border-bottom-color:var(--yellow); }
+  .admin-tab:hover:not(.active) { color:var(--text); }
+  .admin-content { display:none; }
+  .admin-content.active { display:block; }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:20px; }
+  .card-title { font-size:15px; font-weight:600; margin-bottom:4px; }
+  .card-sub { font-size:12px; color:var(--text-dim); margin-bottom:20px; }
+
+  .tool-tier-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .tool-tier-item {
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px;
+  }
+  .tool-tier-name { font-size:12px; font-weight:500; }
+  .tier-select {
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:4px 8px; color:var(--text); font-family:var(--mono); font-size:10px;
+    cursor:pointer; outline:none;
+  }
+  .tier-select:focus { border-color:var(--cyan); }
+
+  .save-btn {
+    padding:10px 24px; background:linear-gradient(135deg,var(--yellow),#cc9900);
+    color:#050a0e; border:none; border-radius:8px; font-family:var(--mono);
+    font-size:11px; font-weight:700; letter-spacing:2px; cursor:pointer; transition:all 0.2s;
+  }
+  .save-btn:hover { box-shadow:0 8px 25px rgba(255,204,0,0.3); transform:translateY(-1px); }
+
+  .promo-list { margin-bottom:16px; }
+  .promo-item {
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+    padding:12px 16px; margin-bottom:8px;
+  }
+  .promo-code { font-family:var(--mono); font-size:13px; color:var(--cyan); letter-spacing:2px; }
+  .promo-plan { font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; }
+  .promo-plan.premium { color:var(--purple); }
+  .promo-plan.standard { color:var(--green); }
+  .promo-plan.free { color:var(--text-dim); }
+  .delete-btn {
+    padding:4px 12px; border:1px solid rgba(255,68,68,0.3); border-radius:6px;
+    background:transparent; color:var(--red); font-family:var(--mono); font-size:10px;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .delete-btn:hover { background:rgba(255,68,68,0.1); }
+
+  .add-promo-row { display:flex; gap:10px; align-items:flex-end; margin-top:16px; }
+  .form-group-sm { flex:1; }
+  .form-group-sm label { display:block; font-family:var(--mono); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px; }
+  input.sm, select.sm {
+    width:100%; background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; padding:10px 12px; color:var(--text);
+    font-family:var(--mono); font-size:12px; outline:none; transition:all 0.2s;
+    text-transform:uppercase;
+  }
+  input.sm:focus, select.sm:focus { border-color:var(--cyan); }
+
+  .users-table { width:100%; border-collapse:collapse; }
+  .users-table th { text-align:left; padding:10px 16px; font-family:var(--mono); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); border-bottom:1px solid var(--border); }
+  .users-table td { padding:12px 16px; font-size:13px; border-bottom:1px solid rgba(255,255,255,0.03); }
+  .users-table tr:hover td { background:var(--surface2); }
+
+  .plan-select {
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:4px 8px; color:var(--text); font-family:var(--mono); font-size:10px; cursor:pointer; outline:none;
+  }
+
+  .msg-bar {
+    padding:10px 16px; border-radius:8px; font-family:var(--mono); font-size:11px;
+    margin-bottom:16px; display:none;
+  }
+  .msg-bar.show { display:block; }
+  .msg-bar.success { background:rgba(0,255,136,0.1); color:var(--green); border:1px solid rgba(0,255,136,0.2); }
+</style>
+
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+  <div style="padding:4px 14px;background:rgba(255,204,0,0.1);color:var(--yellow);border:1px solid rgba(255,204,0,0.2);border-radius:6px;font-family:var(--mono);font-size:10px;letter-spacing:2px">ADMIN PANEL</div>
+  <div class="page-title">Platform Administration</div>
+</div>
+
+<div class="admin-tabs">
+  <div class="admin-tab active" onclick="switchAdmin('tools')">Tool Access</div>
+  <div class="admin-tab" onclick="switchAdmin('promos')">Promo Codes</div>
+  <div class="admin-tab" onclick="switchAdmin('users')">Users</div>
+</div>
+
+<!-- TOOL ACCESS -->
+<div class="admin-content active" id="admin-tools">
+  <div class="msg-bar success" id="tools-saved">✓ Tool access configuration saved successfully!</div>
+  <div class="card">
+    <div class="card-title">Tool Access Control</div>
+    <div class="card-sub">Set which subscription tier is required to access each tool. Changes take effect immediately for all users.</div>
+
+    <div style="margin-bottom:16px;font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:1px">⬡ DNA TOOLS</div>
+    <div class="tool-tier-grid" id="dna-tools-grid"></div>
+
+    <div style="margin:20px 0 16px;font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:1px">≋ RNA TOOLS</div>
+    <div class="tool-tier-grid" id="rna-tools-grid"></div>
+
+    <div style="margin:20px 0 16px;font-family:var(--mono);font-size:10px;color:var(--purple);letter-spacing:1px">✦ PROTEIN TOOLS</div>
+    <div class="tool-tier-grid" id="protein-tools-grid"></div>
+
+    <div style="margin-top:20px">
+      <button class="save-btn" onclick="saveToolConfig()">Save Configuration</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROMO CODES -->
+<div class="admin-content" id="admin-promos">
+  <div class="card">
+    <div class="card-title">Promo Code Manager</div>
+    <div class="card-sub">Create and manage promo codes to grant users special access. Share these codes with selected users.</div>
+    <div class="promo-list" id="promo-list"></div>
+    <div class="add-promo-row">
+      <div class="form-group-sm">
+        <label>Code</label>
+        <input class="sm" type="text" id="new-code" placeholder="MOCO-XXXX" />
+      </div>
+      <div class="form-group-sm">
+        <label>Plan</label>
+        <select class="sm" id="new-plan" style="text-transform:none">
+          <option value="free">Free</option>
+          <option value="standard">Standard</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
+      <button class="save-btn" onclick="addPromo()" style="white-space:nowrap">+ Add Code</button>
+    </div>
+  </div>
+</div>
+
+<!-- USERS -->
+<div class="admin-content" id="admin-users">
+  <div class="card">
+    <div class="card-title">User Management</div>
+    <div class="card-sub">View and manage user accounts and their subscription plans.</div>
+    <table class="users-table">
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Plan</th><th>Actions</th></tr></thead>
+      <tbody id="users-tbody">
+        <tr>
+          <td>Admin</td><td style="font-family:var(--mono);font-size:11px">admin@moco.ai</td>
+          <td><span style="color:var(--yellow);font-family:var(--mono);font-size:10px">ADMIN</span></td>
+          <td><span style="color:var(--purple);font-family:var(--mono);font-size:10px">PREMIUM</span></td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Researcher</td><td style="font-family:var(--mono);font-size:11px">user@moco.ai</td>
+          <td><span style="color:var(--text-dim);font-family:var(--mono);font-size:10px">USER</span></td>
+          <td>
+            <select class="plan-select" onchange="updateUserPlan('user@moco.ai',this.value)">
+              <option value="free">FREE</option>
+              <option value="standard">STANDARD</option>
+              <option value="premium">PREMIUM</option>
+            </select>
+          </td>
+          <td><button class="delete-btn">Remove</button></td>
+        </tr>
+        <tr>
+          <td>Pro User</td><td style="font-family:var(--mono);font-size:11px">pro@moco.ai</td>
+          <td><span style="color:var(--text-dim);font-family:var(--mono);font-size:10px">USER</span></td>
+          <td>
+            <select class="plan-select" onchange="updateUserPlan('pro@moco.ai',this.value)">
+              <option value="free">FREE</option>
+              <option value="standard" selected>STANDARD</option>
+              <option value="premium">PREMIUM</option>
+            </select>
+          </td>
+          <td><button class="delete-btn">Remove</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<script>
+const DNA_TOOLS = {
+  'bwa-mem':'BWA-MEM', 'bowtie2':'Bowtie2', 'gatk':'GATK HaplotypeCaller',
+  'freebayes':'FreeBayes', 'vblast':'VBLAST/BLAST', 'ngs-core':'NGS-Core Pipeline',
+  'fastqc':'FastQC/MultiQC', 'adapter-trim':'Adapter Trimming', 'crispr':'CRISPR Analysis',
+  'mutation-analysis':'Mutation Analysis', 'mutation-finder':'Mutation Finder',
+  'ncbi-lookup':'NCBI Reference Lookup', 'organism-id':'Organism Identification',
+  'restriction':'Restriction Mapping', 'orf-finder':'ORF Finder',
+  'primer-design':'Primer Design', 'gc-content':'GC Content',
+  'reverse-complement':'Reverse Complement', 'transcription':'Transcription'
+};
+const RNA_TOOLS = {
+  'star-aligner':'STAR Aligner', 'deseq2':'DESeq2', '3reads':'3\' READS', '3race':'3\' RACE',
+  '10x-genomics':'10x Genomics', 'smart-seq2':'Smart-seq2', 'drop-seq':'Drop-seq',
+  'mars-seq':'MARS-seq', 'cite-seq':'CITE-seq', 'atac-seq':'ATAC-seq',
+  'snrna-seq':'snRNA-seq', 'bulk-rnaseq':'Bulk RNA-seq', 'long-read':'Long-read RNA-seq',
+  'spatial-tx':'Spatial Transcriptomics', 'chip-seq':'ChIP-seq',
+  'codon-analysis':'Codon Analysis', 'translation':'Translation', 'secondary-struct':'Secondary Structure'
+};
+const PROTEIN_TOOLS = {
+  'alphafold':'AlphaFold', 'protein-3d':'Protein 3D Folding', 'mol-dynamics':'Mol. Dynamics',
+  'mol-docking':'Mol. Docking', 'cadd':'CADD', 'drug-protein':'Drug-Protein Matching',
+  'hotspot':'Hotspot Affinity', 'protein-finder':'Protein Finder',
+  'amino-acid':'Amino Acid Comp.', 'mol-weight':'Mol. Weight & pI',
+  'mutation-hotspot':'Mutation Hotspot', 'msms':'MS/MS Proteomics', 'western-blot':'Western Blot'
+};
+
+let promos = JSON.parse(localStorage.getItem('moco_admin_promos') || JSON.stringify({
+  'MOCO-ALPHA': 'premium', 'MOCO-BETA': 'standard', 'MOCO-FREE': 'free',
+  'MOCO-LAB': 'standard', 'MOCO-PRO': 'premium'
+}));
+
+function switchAdmin(tab) {
+  document.querySelectorAll('.admin-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['tools','promos','users'][i] === tab);
+  });
+  document.querySelectorAll('.admin-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('admin-'+tab).classList.add('active');
+}
+
+function buildToolGrid(containerId, tools) {
+  const config = getToolConfig();
+  const el = document.getElementById(containerId);
+  el.innerHTML = Object.entries(tools).map(([id, name]) => `
+    <div class="tool-tier-item">
+      <div class="tool-tier-name">${name}</div>
+      <select class="tier-select" id="tool-${id}">
+        <option value="free" ${config[id]==='free'?'selected':''}>Free</option>
+        <option value="standard" ${config[id]==='standard'?'selected':''}>Standard</option>
+        <option value="premium" ${config[id]==='premium'?'selected':''}>Premium</option>
+      </select>
+    </div>
+  `).join('');
+}
+
+function saveToolConfig() {
+  const allTools = {...DNA_TOOLS, ...RNA_TOOLS, ...PROTEIN_TOOLS};
+  const config = {};
+  Object.keys(allTools).forEach(id => {
+    const el = document.getElementById('tool-'+id);
+    if (el) config[id] = el.value;
+  });
+  localStorage.setItem('moco_tool_config', JSON.stringify(config));
+  const msg = document.getElementById('tools-saved');
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), 3000);
+}
+
+function renderPromos() {
+  const el = document.getElementById('promo-list');
+  el.innerHTML = Object.entries(promos).map(([code, plan]) => `
+    <div class="promo-item">
+      <div class="promo-code">${code}</div>
+      <div class="promo-plan ${plan}">${plan.toUpperCase()}</div>
+      <button class="delete-btn" onclick="deletePromo('${code}')">Delete</button>
+    </div>
+  `).join('');
+}
+
+function addPromo() {
+  const code = document.getElementById('new-code').value.trim().toUpperCase();
+  const plan = document.getElementById('new-plan').value;
+  if (!code) return alert('Enter a promo code');
+  promos[code] = plan;
+  localStorage.setItem('moco_admin_promos', JSON.stringify(promos));
+  document.getElementById('new-code').value = '';
+  renderPromos();
+}
+
+function deletePromo(code) {
+  if (!confirm(`Delete promo code ${code}?`)) return;
+  delete promos[code];
+  localStorage.setItem('moco_admin_promos', JSON.stringify(promos));
+  renderPromos();
+}
+
+function updateUserPlan(email, plan) {
+  alert(`Updated ${email} to ${plan} plan.\n(Demo: changes saved locally)`);
+}
+
+buildToolGrid('dna-tools-grid', DNA_TOOLS);
+buildToolGrid('rna-tools-grid', RNA_TOOLS);
+buildToolGrid('protein-tools-grid', PROTEIN_TOOLS);
+renderPromos();
+</script>
+</body>
+</html>

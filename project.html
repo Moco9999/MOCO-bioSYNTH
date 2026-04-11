@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>MOCO — Project</title><script src="nav.js"></script></head><body>
+<script>requireAuth();</script><script>injectNav('project');</script>
+<div class="main-content">
+<style>
+.proj-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+.proj-id{display:inline-block;padding:3px 10px;background:rgba(0,229,255,0.1);color:var(--cyan);border:1px solid rgba(0,229,255,0.2);border-radius:4px;font-family:var(--mono);font-size:10px;letter-spacing:1px;margin-bottom:10px}
+.proj-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.proj-desc{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:10px}
+.proj-meta{font-family:var(--mono);font-size:10px;color:var(--text-dim)}
+.active-badge{padding:4px 12px;background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.2);border-radius:20px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.team-member{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.team-member:last-child{border-bottom:none}
+.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:700;flex-shrink:0}
+.member-name{font-size:13px;font-weight:600}
+.member-role{font-size:11px;color:var(--text-dim)}
+.file-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.file-item:last-child{border-bottom:none}
+.file-tag{padding:3px 8px;border-radius:4px;font-family:var(--mono);font-size:9px;font-weight:700;min-width:50px;text-align:center}
+.file-name{font-size:12px;font-weight:500}
+.file-meta{font-size:11px;color:var(--text-dim)}
+</style>
+<div class="page-header"><div class="page-title">Project</div><div class="page-sub">Project overview and collaboration</div></div>
+<div class="proj-card">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between">
+    <div>
+      <div style="font-size:22px;font-weight:700;margin-bottom:8px">Cardiac APA Dynamics — HF Cohort</div>
+      <div class="proj-id">PROJ-2026-0042</div>
+    </div>
+    <div class="active-badge">Active</div>
+  </div>
+  <div class="proj-desc">Genome-wide analysis of alternative polyadenylation site usage and UTR length dynamics in cardiomyopathy and heart failure. Integrates 3' READS, RNA-seq, and ATAC-seq data across disease progression timepoints.</div>
+  <div class="proj-meta">📅 Created Feb 14, 2026</div>
+</div>
+<div class="two-col">
+  <div class="proj-card">
+    <div style="font-size:15px;font-weight:600;margin-bottom:16px">👥 Team</div>
+    ${[['AC','Dr. A. Chen','PI','#00e5ff'],['MR','M. Rashid','Bioinformatician','#00ff88'],['SP','S. Park','Wet Lab','#bf5fff'],['JM','J. Müller','Data Analyst','#ffcc00']].map(([init,name,role,c])=>`
+      <div class="team-member">
+        <div class="avatar" style="background:${c}20;color:${c};border:1px solid ${c}30">${init}</div>
+        <div><div class="member-name">${name}</div><div class="member-role">${role}</div></div>
+      </div>
+    `).join('')}
+  </div>
+  <div class="proj-card">
+    <div style="font-size:15px;font-weight:600;margin-bottom:16px">📁 Recent Files</div>
+    ${[['FASTQ','HF_cohort_3READS_run1.fastq.gz','2.1 GB · Apr 8, 2026','rgba(0,229,255,0.15)','#00e5ff'],['BED','cardiac_apa_sites_annotated.bed','18.4 MB · Apr 7, 2026','rgba(0,255,136,0.15)','#00ff88'],['CSV','DESeq2_results_HFvsCtrl.csv','4.2 MB · Apr 6, 2026','rgba(0,229,255,0.15)','#00e5ff'],['PDB','alphafold_TNNT2_structure.pdb','1.8 MB · Apr 5, 2026','rgba(191,95,255,0.15)','#bf5fff'],['XLSX','cohort_metadata_n48.xlsx','320 KB · Mar 29, 2026','rgba(0,255,136,0.15)','#00ff88']].map(([t,n,m,bg,c])=>`
+      <div class="file-item">
+        <div class="file-tag" style="background:${bg};color:${c}">${t}</div>
+        <div><div class="file-name">${n}</div><div class="file-meta">${m}</div></div>
+      </div>
+    `).join('')}
+  </div>
+</div>
+</div></body></html>
