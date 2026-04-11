@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOCO — Subscription</title>
+<script src="nav.js"></script>
+</head>
+<body>
+<script>requireAuth();</script>
+<script>injectNav('subscription');</script>
+
+<div class="main-content">
+  <div class="page-header">
+    <div class="page-title">Subscription Plans</div>
+    <div class="page-sub">Choose the plan that fits your research needs</div>
+  </div>
+
+  <style>
+    .plans-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; max-width:900px; margin-bottom:40px; }
+    .plan-card {
+      background:var(--surface); border:1px solid var(--border); border-radius:16px;
+      padding:28px; position:relative; transition:all 0.2s;
+    }
+    .plan-card:hover { transform:translateY(-4px); }
+    .plan-card.popular { border-color:var(--cyan); box-shadow:0 0 30px rgba(0,229,255,0.1); }
+    .plan-card.premium-card { border-color:var(--purple); box-shadow:0 0 30px rgba(191,95,255,0.1); }
+    .popular-badge {
+      position:absolute; top:-12px; left:50%; transform:translateX(-50%);
+      background:linear-gradient(135deg,var(--cyan),var(--cyan-dim));
+      color:#050a0e; font-family:var(--mono); font-size:9px; font-weight:700;
+      letter-spacing:2px; padding:4px 14px; border-radius:20px;
+    }
+    .plan-name { font-family:var(--mono); font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
+    .plan-price { font-size:36px; font-weight:700; color:var(--text); line-height:1; }
+    .plan-price span { font-size:14px; color:var(--text-dim); font-weight:400; }
+    .plan-desc { font-size:13px; color:var(--text-dim); margin:12px 0 20px; line-height:1.5; }
+    .plan-features { list-style:none; margin-bottom:24px; }
+    .plan-features li { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-dim); padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
+    .plan-features li .check { color:var(--green); font-weight:700; flex-shrink:0; }
+    .plan-features li .lock { color:var(--text-dim); opacity:0.5; flex-shrink:0; }
+    .plan-btn {
+      width:100%; padding:11px; border:1px solid var(--border); border-radius:8px;
+      background:transparent; color:var(--text-dim); font-family:var(--mono);
+      font-size:11px; letter-spacing:2px; text-transform:uppercase; cursor:pointer;
+      transition:all 0.2s;
+    }
+    .plan-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+    .plan-btn.primary {
+      background:linear-gradient(135deg,var(--cyan),var(--cyan-dim));
+      color:#050a0e; border:none; font-weight:700;
+    }
+    .plan-btn.primary:hover { box-shadow:0 8px 25px rgba(0,229,255,0.3); transform:translateY(-1px); }
+    .plan-btn.prem {
+      background:linear-gradient(135deg,var(--purple),#9933cc);
+      color:#fff; border:none; font-weight:700;
+    }
+    .plan-btn.prem:hover { box-shadow:0 8px 25px rgba(191,95,255,0.3); }
+    .plan-btn.current { opacity:0.5; cursor:default; }
+    .plan-btn.current:hover { transform:none; box-shadow:none; }
+
+    .current-plan-badge {
+      display:inline-block; padding:4px 12px; border-radius:20px;
+      font-family:var(--mono); font-size:10px; letter-spacing:2px;
+      background:rgba(0,255,136,0.1); color:var(--green); border:1px solid rgba(0,255,136,0.2);
+      margin-bottom:12px;
+    }
+
+    .promo-section {
+      background:var(--surface); border:1px solid var(--border); border-radius:16px;
+      padding:28px; max-width:500px; margin-bottom:30px;
+    }
+    .promo-title { font-size:16px; font-weight:600; margin-bottom:6px; }
+    .promo-sub { font-size:13px; color:var(--text-dim); margin-bottom:16px; }
+    .promo-row { display:flex; gap:10px; }
+    .promo-input {
+      flex:1; background:var(--surface2); border:1px solid var(--border);
+      border-radius:8px; padding:10px 14px; color:var(--text);
+      font-family:var(--mono); font-size:13px; outline:none; transition:all 0.2s;
+      text-transform:uppercase;
+    }
+    .promo-input:focus { border-color:var(--cyan); }
+    .promo-apply {
+      padding:10px 20px; background:linear-gradient(135deg,var(--cyan),var(--cyan-dim));
+      border:none; border-radius:8px; color:#050a0e; font-family:var(--mono);
+      font-size:11px; font-weight:700; letter-spacing:1px; cursor:pointer;
+      transition:all 0.2s;
+    }
+    .promo-apply:hover { box-shadow:0 4px 15px rgba(0,229,255,0.3); }
+    .msg { margin-top:10px; font-family:var(--mono); font-size:11px; padding:8px 12px; border-radius:6px; display:none; }
+    .msg.success { display:block; background:rgba(0,255,136,0.1); color:var(--green); border:1px solid rgba(0,255,136,0.2); }
+    .msg.error { display:block; background:rgba(255,68,68,0.1); color:var(--red); border:1px solid rgba(255,68,68,0.2); }
+  </style>
+
+  <div id="current-plan-info" style="margin-bottom:24px;font-family:var(--mono);font-size:12px;color:var(--text-dim)"></div>
+
+  <div class="plans-grid">
+    <!-- FREE -->
+    <div class="plan-card" id="card-free">
+      <div class="plan-name">Basic</div>
+      <div class="plan-price">₹0 <span>/ month</span></div>
+      <div class="plan-desc">Essential tools for students and early-stage researchers.</div>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> GC Content Calculator</li>
+        <li><span class="check">✓</span> Reverse Complement</li>
+        <li><span class="check">✓</span> Transcription (DNA→RNA)</li>
+        <li><span class="check">✓</span> Translation (RNA→Protein)</li>
+        <li><span class="check">✓</span> Codon Analysis</li>
+        <li><span class="check">✓</span> Amino Acid Composition</li>
+        <li><span class="check">✓</span> Molecular Weight & pI</li>
+        <li><span class="check">✓</span> NCBI Reference Lookup</li>
+        <li><span class="lock">✗</span> Pipeline Builder</li>
+        <li><span class="lock">✗</span> Advanced Aligners</li>
+      </ul>
+      <button class="plan-btn" id="btn-free" onclick="selectPlan('free')">Get Started Free</button>
+    </div>
+
+    <!-- STANDARD -->
+    <div class="plan-card popular" id="card-standard">
+      <div class="popular-badge">MOST POPULAR</div>
+      <div class="plan-name">Standard</div>
+      <div class="plan-price">₹999 <span>/ month</span></div>
+      <div class="plan-desc">For active researchers running regular bioinformatics analyses.</div>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> Everything in Basic</li>
+        <li><span class="check">✓</span> FreeBayes Variant Calling</li>
+        <li><span class="check">✓</span> Mutation Analysis</li>
+        <li><span class="check">✓</span> Drop-seq & MARS-seq</li>
+        <li><span class="check">✓</span> Bulk RNA-seq</li>
+        <li><span class="check">✓</span> FastQC / MultiQC</li>
+        <li><span class="check">✓</span> Adapter Trimming</li>
+        <li><span class="check">✓</span> Lab Workbench Access</li>
+        <li><span class="check">✓</span> Job Queue (5 concurrent)</li>
+        <li><span class="lock">✗</span> STAR Aligner / DESeq2</li>
+      </ul>
+      <button class="plan-btn primary" id="btn-standard" onclick="selectPlan('standard')">Upgrade to Standard</button>
+    </div>
+
+    <!-- PREMIUM -->
+    <div class="plan-card premium-card" id="card-premium">
+      <div class="plan-name">Premium</div>
+      <div class="plan-price">₹2,999 <span>/ month</span></div>
+      <div class="plan-desc">Full platform access for power users and research teams.</div>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> Everything in Standard</li>
+        <li><span class="check">✓</span> STAR Aligner & DESeq2</li>
+        <li><span class="check">✓</span> GATK HaplotypeCaller</li>
+        <li><span class="check">✓</span> AlphaFold Prediction</li>
+        <li><span class="check">✓</span> Molecular Docking</li>
+        <li><span class="check">✓</span> 3' READS & RACE</li>
+        <li><span class="check">✓</span> Spatial Transcriptomics</li>
+        <li><span class="check">✓</span> Unlimited Job Queue</li>
+        <li><span class="check">✓</span> Priority Compute Nodes</li>
+        <li><span class="check">✓</span> All Future Tools Included</li>
+      </ul>
+      <button class="plan-btn prem" id="btn-premium" onclick="selectPlan('premium')">Go Premium</button>
+    </div>
+  </div>
+
+  <!-- PROMO CODE -->
+  <div class="promo-section">
+    <div class="promo-title">🎟 Promo Code</div>
+    <div class="promo-sub">Have a special access code? Enter it below to unlock your plan.</div>
+    <div class="promo-row">
+      <input class="promo-input" type="text" id="promo-input" placeholder="MOCO-XXXX" />
+      <button class="promo-apply" onclick="applyPromo()">Apply</button>
+    </div>
+    <div class="msg" id="promo-msg"></div>
+  </div>
+</div>
+
+<script>
+const PROMO_CODES = { 'MOCO-ALPHA': 'premium', 'MOCO-BETA': 'standard', 'MOCO-FREE': 'free', 'MOCO-LAB': 'standard', 'MOCO-PRO': 'premium' };
+
+function init() {
+  const user = getUser();
+  if (!user) return;
+  const plan = user.plan || 'free';
+  document.getElementById('current-plan-info').innerHTML =
+    `Current plan: <span style="color:var(--cyan)">${plan.toUpperCase()}</span>`;
+
+  // Mark current plan
+  ['free','standard','premium'].forEach(p => {
+    const btn = document.getElementById('btn-' + p);
+    if (p === plan) {
+      btn.textContent = '✓ Current Plan';
+      btn.classList.add('current');
+      btn.disabled = true;
+    }
+  });
+}
+
+function selectPlan(plan) {
+  const user = getUser();
+  user.plan = plan;
+  localStorage.setItem('moco_user', JSON.stringify(user));
+  // Simulate payment redirect for paid plans
+  if (plan === 'free') {
+    alert('You are now on the Basic plan!');
+    window.location.href = 'dashboard.html';
+  } else {
+    alert(`Redirecting to payment gateway for ${plan === 'standard' ? '₹999' : '₹2,999'}/month plan...\n\n(Demo: Plan upgraded directly)`);
+    user.plan = plan;
+    localStorage.setItem('moco_user', JSON.stringify(user));
+    window.location.href = 'dashboard.html';
+  }
+}
+
+function applyPromo() {
+  const code = document.getElementById('promo-input').value.trim().toUpperCase();
+  const msgEl = document.getElementById('promo-msg');
+  msgEl.className = 'msg';
+  if (PROMO_CODES[code]) {
+    const newPlan = PROMO_CODES[code];
+    const user = getUser();
+    user.plan = newPlan; user.promoCode = code;
+    localStorage.setItem('moco_user', JSON.stringify(user));
+    msgEl.textContent = `✓ Code applied! You now have ${newPlan.toUpperCase()} access.`;
+    msgEl.classList.add('success');
+    setTimeout(() => window.location.href = 'dashboard.html', 1500);
+  } else {
+    msgEl.textContent = '✗ Invalid promo code. Please check and try again.';
+    msgEl.classList.add('error');
+  }
+}
+
+init();
+</script>
+</body>
+</html>

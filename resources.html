@@ -1,0 +1,53 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>MOCO — Resources</title><script src="nav.js"></script></head><body>
+<script>requireAuth();</script><script>injectNav('resources');</script>
+<div class="main-content">
+<style>
+.res-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.res-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.res-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;display:flex;justify-content:space-between}
+.res-value{font-size:24px;font-weight:700;margin-bottom:8px}
+.res-track{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.res-fill{height:100%;border-radius:3px}
+.res-sub{font-size:11px;color:var(--text-dim)}
+.jobs-table{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:12px 20px;font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);border-bottom:1px solid var(--border);background:var(--surface2)}
+td{padding:13px 20px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.03)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.status-running{padding:3px 10px;background:rgba(0,229,255,0.1);color:var(--cyan);border-radius:4px;font-family:var(--mono);font-size:9px;font-weight:700}
+.status-queued{padding:3px 10px;background:rgba(255,204,0,0.1);color:var(--yellow);border-radius:4px;font-family:var(--mono);font-size:9px;font-weight:700}
+.nodes-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.node-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.node-status{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot.healthy{background:var(--green);box-shadow:0 0 8px var(--green)}
+.dot.degraded{background:var(--red);box-shadow:0 0 8px var(--red)}
+</style>
+<div class="page-header"><div class="page-title">Compute Resources</div><div class="page-sub">Infrastructure usage and active job monitoring</div></div>
+<div class="res-grid">
+  <div class="res-card"><div class="res-label">CPU</div><div class="res-value" style="color:var(--cyan)">65%</div><div class="res-track"><div class="res-fill" style="width:65%;background:var(--cyan)"></div></div><div class="res-sub">62 / 96 cores</div></div>
+  <div class="res-card"><div class="res-label">Memory</div><div class="res-value" style="color:var(--green)">66%</div><div class="res-track"><div class="res-fill" style="width:66%;background:var(--green)"></div></div><div class="res-sub">84 / 128 GB</div></div>
+  <div class="res-card" style="border-color:rgba(255,68,68,0.3)"><div class="res-label">Storage <span style="color:var(--red)">High usage</span></div><div class="res-value" style="color:var(--red)">86%</div><div class="res-track"><div class="res-fill" style="width:86%;background:var(--red)"></div></div><div class="res-sub">14.2 / 16.5 TB</div></div>
+  <div class="res-card"><div class="res-label">Network I/O</div><div class="res-value" style="color:var(--cyan)">24%</div><div class="res-track"><div class="res-fill" style="width:24%;background:var(--cyan)"></div></div><div class="res-sub">24 / 100 Gbps</div></div>
+</div>
+<div style="font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px"><span>⚙️</span> Active Jobs</div>
+<div class="jobs-table">
+  <table>
+    <thead><tr><th>Job Name</th><th>CPU Cores</th><th>Memory</th><th>Runtime</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>3' READS HF Cohort</td><td style="color:var(--cyan);font-family:var(--mono)">32</td><td style="color:var(--green);font-family:var(--mono)">12.4 GB</td><td style="font-family:var(--mono)">08:42</td><td><span class="status-running">running</span></td></tr>
+      <tr><td>STAR Align — Batch 3</td><td style="color:var(--cyan);font-family:var(--mono)">16</td><td style="color:var(--green);font-family:var(--mono)">8.1 GB</td><td style="font-family:var(--mono)">03:17</td><td><span class="status-running">running</span></td></tr>
+      <tr><td>AlphaFold TNNT2</td><td style="color:var(--cyan);font-family:var(--mono)">48</td><td style="color:var(--green);font-family:var(--mono)">22 GB</td><td style="font-family:var(--mono)">01:05</td><td><span class="status-running">running</span></td></tr>
+      <tr><td>DESeq2 Differential</td><td style="color:var(--cyan);font-family:var(--mono)">8</td><td style="color:var(--green);font-family:var(--mono)">3.2 GB</td><td style="font-family:var(--mono)">00:28</td><td><span class="status-queued">queued</span></td></tr>
+    </tbody>
+  </table>
+</div>
+<div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">Compute Node Health</div>
+<div class="nodes-grid">
+  <div class="node-card"><div style="font-weight:600;margin-bottom:6px">Node-01</div><div class="node-status"><div class="dot healthy"></div><span style="color:var(--green)">Healthy</span></div></div>
+  <div class="node-card"><div style="font-weight:600;margin-bottom:6px">Node-02</div><div class="node-status"><div class="dot healthy"></div><span style="color:var(--green)">Healthy</span></div></div>
+  <div class="node-card" style="border-color:rgba(255,68,68,0.3)"><div style="font-weight:600;margin-bottom:6px">Node-03</div><div class="node-status"><div class="dot degraded"></div><span style="color:var(--red)">Degraded</span></div></div>
+  <div class="node-card"><div style="font-weight:600;margin-bottom:6px">Node-04</div><div class="node-status"><div class="dot healthy"></div><span style="color:var(--green)">Healthy</span></div></div>
+</div>
+</div></body></html>
