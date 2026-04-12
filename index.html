@@ -1,4 +1,5 @@
-﻿<html class="dark" lang="en"><head>
+﻿<!DOCTYPE html>
+<html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>MOCO | Multi-Omics Computational Orchestrator</title>
@@ -100,6 +101,12 @@
         .glow-overlay {
             background: radial-gradient(circle at center, rgba(0, 240, 255, 0.15) 0%, transparent 70%);
         }
+        .text-success {
+            color: #34d399;
+        }
+        .text-error {
+            color: #ef4444;
+        }
     </style>
 </head>
 <body class="selection:bg-primary-container selection:text-on-primary">
@@ -107,20 +114,14 @@
 <header class="fixed top-0 w-full z-50 bg-[#111318]/60 backdrop-blur-3xl border-b border-[#3b494b]/10">
 <nav class="flex justify-between items-center px-12 py-4 w-full">
 <div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-2xl bg-[#0f1720] border border-[#00F0FF]/20 flex items-center justify-center shadow-[0_0_20px_rgba(0,240,255,0.15)]">
-<svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M18 80C30 20 42 32 50 58C58 32 70 20 82 80" stroke="#00F0FF" stroke-width="8" stroke-linecap="round"/>
-<path d="M25 20C28 48 34 55 50 60C66 65 72 48 75 20" stroke="#7df4ff" stroke-width="6" stroke-linecap="round" opacity="0.75"/>
-<path d="M33 22L42 35M57 35L66 22M30 46L40 54M60 54L70 46M34 70L42 58M58 58L66 70" stroke="#00F0FF" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
-</svg>
-</div>
+<img src="./logo.png" alt="MOCO Logo" class="h-8"/>
 <div class="text-base font-bold tracking-tighter text-[#e2e2e8] font-headline uppercase">MOCO</div>
 </div>
 <div class="hidden md:flex gap-10 items-center">
-<a class="font-label text-sm uppercase tracking-wider text-[#00F0FF] border-b-2 border-[#00F0FF] pb-1" href="#product">Product</a>
-<a class="font-label text-sm uppercase tracking-wider text-[#e2e2e8]/70 hover:text-[#00F0FF] transition-all duration-300" href="#features">Features</a>
-<a class="font-label text-sm uppercase tracking-wider text-[#e2e2e8]/70 hover:text-[#00F0FF] transition-all duration-300" href="#subscription">Billing</a>
-<a class="font-label text-sm uppercase tracking-wider text-[#e2e2e8]/70 hover:text-[#00F0FF] transition-all duration-300" href="#about">About</a>
+<a class="nav-link font-label text-sm uppercase tracking-wider text-[#00F0FF] border-b-2 border-[#00F0FF] pb-1" href="#product">Product</a>
+<a class="nav-link font-label text-sm uppercase tracking-wider text-[#e2e2e8]/70 hover:text-[#00F0FF] transition-all duration-300" href="#features">Features</a>
+<a class="nav-link font-label text-sm uppercase tracking-wider text-[#e2e2e8]/70 hover:text-[#00F0FF] transition-all duration-300" href="#subscription">Billing</a>
+<a class="nav-link font-label text-sm uppercase tracking-wider text-[#e2e2e8]/70 hover:text-[#00F0FF] transition-all duration-300" href="#about">About</a>
 </div>
 <button class="font-label text-sm uppercase tracking-widest text-[#00F0FF] border border-[#00F0FF]/30 px-6 py-2 rounded-md hover:bg-[#00F0FF]/10 transition-all" onclick="openDrawer()">Login</button>
 </nav>
@@ -147,12 +148,18 @@
 </div>
 <div id="login-error" class="hidden text-sm text-error mt-2">Invalid email or password.</div>
 <div class="pt-2">
-<a class="font-label text-[10px] uppercase tracking-[0.1em] text-[#00F0FF]/60 hover:text-[#00F0FF] transition-all" href="#">Have a promo code?</a>
+<a class="font-label text-[10px] uppercase tracking-[0.1em] text-[#00F0FF]/60 hover:text-[#00F0FF] transition-all cursor-pointer" onclick="togglePromoCodeInput(event)">Have a promo code?</a>
+</div>
+<div id="promo-code-section" class="hidden space-y-4 mt-4">
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-[#e2e2e8]/40">Promo Code</label>
+<input id="promo-code-input" class="w-full bg-surface-container border-none border-b-2 border-outline-variant focus:border-primary-container focus:ring-0 text-on-surface placeholder:text-on-surface-variant/30 py-3 rounded-sm transition-all" placeholder="Enter Promo Code" type="text"/>
+<button class="w-full synthetic-gradient text-on-primary font-label font-bold py-4 rounded-md shadow-[0_0_20px_rgba(0,240,255,0.2)]" onclick="activatePromoCode()">Activate Promo Code</button>
+<div id="promo-code-message" class="hidden text-sm mt-2"></div>
 </div>
 <button class="w-full synthetic-gradient text-on-primary font-label font-bold py-4 rounded-md shadow-[0_0_20px_rgba(0,240,255,0.2)] mt-4" onclick="handleLogin()">Login</button>
 <button class="w-full mt-3 border border-[#00F0FF]/30 text-[#00F0FF] font-label font-bold py-4 rounded-md hover:bg-[#00F0FF]/10 transition-all" onclick="openGooglePanel()">Continue with Google</button>
 <div class="pt-4 text-center">
-<p class="text-xs text-on-surface-variant/70">Don’t have an account? <a href="#" class="text-[#00F0FF] hover:text-[#7df4ff]" onclick="toggleAuthMode('signup'); return false;">Create one</a></p>
+<p class="text-xs text-on-surface-variant/70">Don’t have an account? <a href="#" class="text-[#00F0FF] hover:text-[#7df4ff]" id="signup-link">Create one</a></p>
 </div>
 </div>
 <div id="signup-panel" class="hidden space-y-4">
@@ -262,34 +269,10 @@ Choose an account to continue to MOCO. The selected account will be used to auth
 </div>
 </div>
 <!-- Orphic Visualizer -->
-<div class="absolute right-0 top-1/2 -translate-y-1/2 w-[46vw] max-w-[780px] h-[740px] pointer-events-none">
-<div class="relative w-full h-full opacity-95">
-<div class="absolute inset-0 bg-gradient-to-l from-primary/10 to-transparent blur-[100px] rounded-full"></div>
-<svg class="w-full h-full drop-shadow-[0_0_60px_rgba(0,240,255,0.35)]" viewBox="0 0 600 900" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<linearGradient id="dna-gradient" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0%" stop-color="#00F0FF" stop-opacity="0.95"/>
-<stop offset="100%" stop-color="#62d2ff" stop-opacity="0.35"/>
-</linearGradient>
-<linearGradient id="dna-inner" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0%" stop-color="#7df4ff" stop-opacity="0.7"/>
-<stop offset="100%" stop-color="#00b4ff" stop-opacity="0.2"/>
-</linearGradient>
-</defs>
-<path d="M140 80C180 230 220 260 260 250C300 240 340 210 380 240C420 270 450 340 470 430C490 520 500 610 470 700C440 790 380 820 320 760C260 700 220 590 180 480C140 370 120 230 140 80Z" fill="none" stroke="url(#dna-gradient)" stroke-width="24" stroke-linecap="round"/>
-<path d="M170 90C210 240 250 270 290 260C330 250 370 220 410 250C450 280 470 350 480 440C490 530 480 620 450 710C420 800 360 820 320 760C280 700 250 590 220 480C190 370 160 230 170 90Z" fill="none" stroke="url(#dna-inner)" stroke-width="18" stroke-linecap="round"/>
-<g stroke="#00F0FF" stroke-width="5" stroke-linecap="round">
-<line x1="205" y1="130" x2="345" y2="175"/>
-<line x1="190" y1="210" x2="320" y2="245"/>
-<line x1="180" y1="310" x2="295" y2="320"/>
-<line x1="180" y1="420" x2="285" y2="430"/>
-<line x1="190" y1="530" x2="305" y2="525"/>
-<line x1="215" y1="640" x2="330" y2="620"/>
-<line x1="250" y1="740" x2="350" y2="700"/>
-</g>
-<circle cx="420" cy="190" r="16" fill="#00f0ff" opacity="0.9"/>
-<circle cx="340" cy="500" r="12" fill="#7df4ff" opacity="0.75"/>
-</svg>
+<div class="absolute right-[-10%] top-1/2 -translate-y-1/2 w-[70vw] h-[900px] z-10 dna-container">
+<div class="relative w-full h-full opacity-70">
+<div class="absolute inset-0 bg-gradient-to-l from-primary/20 to-transparent blur-[150px] rounded-full"></div>
+<img alt="3D DNA Helix" class="w-full h-full object-contain dna-visual" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfR3kIR6AQAbuVSuc8Pq1JuVhFDDLhHYNW8meEfgiulMTtTeC5140axcSKGzMVJjy9H_SOM6-pO5-com1q7MLw01_BIPFHX9WQAPHYduNN4PWdk5Ib47j-D30_KzVUh4foXICUVaoyWPeGYvU1PZxOoWyKBeA_AkhYQMqK64SBd__OefHfFws69jMdf0ffHnmu2HEpuI-lzvjuLNIhgm4pSRVRXYdgwSGuI21aIo0LOF-tSBXG5Y7rzKhkgvZtFGqZGGMmSBeePJX-"/>
 </div>
 </div>
 </section>
@@ -469,35 +452,9 @@ Choose an account to continue to MOCO. The selected account will be used to auth
 </div>
 <p class="text-sm text-on-surface-variant/80 max-w-2xl mx-auto mt-6">MOCO maps raw sequencing, proteomics, and pathway modeling into a reproducible workflow, helping teams turn complex data into actionable results.</p>
 </div>
-<div class="mt-48 grid grid-cols-2 md:grid-cols-4 gap-12 pt-12 border-t border-outline-variant/10">
-<div class="col-span-2 md:col-span-1">
+<div class="mt-48 pt-12 border-t border-outline-variant/10">
 <div class="text-xl font-bold tracking-tighter text-[#e2e2e8] font-headline uppercase mb-4">MOCO</div>
 <p class="text-xs text-on-surface-variant/60 font-label leading-relaxed">Precision Multi-Omics Engine for the future of computational biology.</p>
-</div>
-<div class="space-y-4">
-<h5 class="font-label text-[10px] uppercase tracking-widest text-[#00F0FF]">Protocols</h5>
-<ul class="space-y-2 text-sm text-on-surface-variant/80 font-body">
-<li class="hover:text-[#00F0FF] transition-colors cursor-pointer">Genomics</li>
-<li class="hover:text-[#00F0FF] transition-colors cursor-pointer">Transcriptomics</li>
-<li class="hover:text-[#00F0FF] transition-colors cursor-pointer">Proteomics</li>
-</ul>
-</div>
-<div class="space-y-4">
-<h5 class="font-label text-[10px] uppercase tracking-widest text-[#00F0FF]">Company</h5>
-<ul class="space-y-2 text-sm text-on-surface-variant/80 font-body">
-<li><a class="hover:text-[#00F0FF] transition-colors" href="#about">About</a></li>
-<li><a class="hover:text-[#00F0FF] transition-colors" href="#">Research</a></li>
-<li><a class="hover:text-[#00F0FF] transition-colors" href="#">Ethics</a></li>
-<li><a class="hover:text-[#00F0FF] transition-colors" href="#subscription">Billing</a></li>
-</ul>
-</div>
-<div class="space-y-4">
-<h5 class="font-label text-[10px] uppercase tracking-widest text-[#00F0FF]">System Status</h5>
-<div class="flex items-center gap-2">
-<div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-<span class="text-xs text-on-surface-variant/80 font-label">All Systems Nominal</span>
-</div>
-</div>
 </div>
 </section>
 
@@ -573,6 +530,69 @@ function confirmGoogleLogin() {
   }));
   window.location.href = 'dashboard.html';
 }
+
+// Promo code logic
+function togglePromoCodeInput(event) {
+  event.preventDefault(); // Prevent default anchor behavior
+  const promoSection = document.getElementById('promo-code-section');
+  promoSection.classList.toggle('hidden');
+  const promoMessage = document.getElementById('promo-code-message');
+  promoMessage.classList.add('hidden'); // Hide any previous messages
+}
+
+const PROMO_CODES = {
+  'MOCOSTANDARD': 'standard',
+  'MOCOPREMIUM': 'premium',
+};
+
+function activatePromoCode() {
+  const promoCodeInput = document.getElementById('promo-code-input');
+  const promoCode = promoCodeInput.value.trim().toUpperCase();
+  const promoMessage = document.getElementById('promo-code-message');
+  const currentUserEmail = document.getElementById('login-email').value.trim();
+
+  if (!currentUserEmail) {
+    promoMessage.textContent = 'Please enter your email to apply a promo code.';
+    promoMessage.classList.remove('hidden');
+    promoMessage.classList.remove('text-success');
+    promoMessage.classList.add('text-error');
+    return;
+  }
+
+  let savedUsers = JSON.parse(localStorage.getItem('moco_users') || '{}');
+  let account = savedUsers[currentUserEmail] || USERS[currentUserEmail];
+
+  if (!account) {
+    promoMessage.textContent = 'No account found with this email. Please register first.';
+    promoMessage.classList.remove('hidden');
+    promoMessage.classList.remove('text-success');
+    promoMessage.classList.add('text-error');
+    return;
+  }
+
+  const newPlan = PROMO_CODES[promoCode];
+  if (newPlan) {
+    account.plan = newPlan;
+    savedUsers[currentUserEmail] = account; // Update in savedUsers
+    localStorage.setItem('moco_users', JSON.stringify(savedUsers));
+    // Also update the current session if user is already logged in (though they would be redirected)
+    const existingUser = JSON.parse(localStorage.getItem('moco_user') || 'null');
+    if (existingUser && existingUser.email === currentUserEmail) {
+      existingUser.plan = newPlan;
+      localStorage.setItem('moco_user', JSON.stringify(existingUser));
+    }
+    promoMessage.textContent = `Promo code activated! Your plan is now ${newPlan.toUpperCase()}.`;
+    promoMessage.classList.remove('hidden');
+    promoMessage.classList.remove('text-error');
+    promoMessage.classList.add('text-success');
+  } else {
+    promoMessage.textContent = 'Invalid promo code.';
+    promoMessage.classList.remove('hidden');
+    promoMessage.classList.remove('text-success');
+    promoMessage.classList.add('text-error');
+  }
+}
+
 function handleSignup() {
   const name = document.getElementById('signup-name').value.trim();
   const email = document.getElementById('signup-email').value.trim();

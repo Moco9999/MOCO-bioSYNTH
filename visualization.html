@@ -29,56 +29,104 @@
 <div class="pipeline-progress">
   <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text-dim);margin-bottom:16px">PIPELINE PROGRESS — RNA-SEQ ANALYSIS</div>
   <div class="progress-steps">
-    <div class="step"><div class="step-circle done">✓</div><div class="step-label done">Raw FASTQ</div></div>
+    <div class="step"><div class="step-circle done">&#10003;</div><div class="step-label done">Raw FASTQ</div></div>
     <div class="step-line done"></div>
-    <div class="step"><div class="step-circle done">✓</div><div class="step-label done">QC & Trim</div></div>
+    <div class="step"><div class="step-circle done">&#10003;</div><div class="step-label done">QC & Trim</div></div>
     <div class="step-line done"></div>
-    <div class="step"><div class="step-circle done">✓</div><div class="step-label done">STAR Align</div></div>
+    <div class="step"><div class="step-circle done">&#10003;</div><div class="step-label done">STAR Align</div></div>
     <div class="step-line done"></div>
-    <div class="step"><div class="step-circle active">⚡</div><div class="step-label active">featureCounts</div></div>
+    <div class="step"><div class="step-circle active">&#9889;</div><div class="step-label active">featureCounts</div></div>
     <div class="step-line"></div>
-    <div class="step"><div class="step-circle">○</div><div class="step-label">DESeq2</div></div>
+    <div class="step"><div class="step-circle">&#9675;</div><div class="step-label">DESeq2</div></div>
     <div class="step-line"></div>
-    <div class="step"><div class="step-circle">○</div><div class="step-label">Visualization</div></div>
+    <div class="step"><div class="step-circle">&#9675;</div><div class="step-label">Visualization</div></div>
   </div>
 </div>
 <div class="viz-grid">
   <div class="viz-card">
-    <div class="viz-title">📊 Gene Expression Heatmap</div>
+    <div class="viz-title">Gene Expression Heatmap</div>
     <div class="heatmap-labels"><span></span><span>Control</span><span>HF-Day3</span><span>HF-Day7</span><span>HF-Day14</span><span>Recovery</span></div>
-    ${['MYH7','MYH6','TNNT2','ACTC1','TPM1','NPPA','NPPB','PLN'].map((g,i) => {
-      const vals = [[0.05,0.3,0.5,0.6,0.4],[0.1,0.35,0.55,0.65,0.45],[0.15,0.25,0.45,0.55,0.35],[0.2,0.4,0.6,0.7,0.5],[0.08,0.2,0.4,0.5,0.3],[0.05,0.5,0.7,0.8,0.55],[0.1,0.55,0.75,0.85,0.6],[0.3,0.1,0.05,0.08,0.25]];
-      const row = vals[i] || [0.2,0.4,0.5,0.6,0.3];
-      return `<div style="display:grid;grid-template-columns:60px repeat(5,1fr);gap:3px;margin-bottom:3px">
-        <div class="gene-label">${g}</div>
-        ${row.map(v => {
-          const r = Math.round(v*200); const b = Math.round((1-v)*255);
-          return `<div class="heatmap-cell" style="background:rgb(${r},${Math.round(v*50)},${b})"></div>`;
-        }).join('')}
-      </div>`;
-    }).join('')}
+    <div id="heatmap-grid"></div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-family:var(--mono);font-size:9px;color:var(--text-dim)">
       Low <div style="flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,rgb(0,0,255),rgb(255,100,0))"></div> High
     </div>
   </div>
   <div>
     <div class="viz-card" style="margin-bottom:16px">
-      <div class="viz-title">🌋 Volcano Plot — HF vs. Control</div>
-      <div style="height:180px;background:var(--surface2);border-radius:8px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">
-        <svg width="100%" height="100%" viewBox="0 0 200 140">
-          ${Array.from({length:80},(_,i)=>{const x=10+Math.random()*180,y=10+Math.random()*120,sig=Math.random()>0.85;return`<circle cx="${x}" cy="${y}" r="${sig?3:1.5}" fill="${sig?(x<100?'#ff4444':'#00ff88'):'#1a3040'}" opacity="${sig?0.9:0.5}"/>`}).join('')}
-          <line x1="100" y1="0" x2="100" y2="140" stroke="#1a3040" stroke-width="1" stroke-dasharray="4"/>
-          <line x1="0" y1="110" x2="200" y2="110" stroke="#1a3040" stroke-width="1" stroke-dasharray="4"/>
-          <text x="190" y="12" fill="#5a8a9a" font-size="7" text-anchor="end" font-family="monospace">-log₁₀(p)</text>
-        </svg>
-      </div>
+      <div class="viz-title">Volcano Plot — HF vs. Control</div>
+      <div id="volcano-plot" style="height:180px;background:var(--surface2);border-radius:8px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center"></div>
     </div>
     <div class="viz-card">
       <div class="viz-title">GO Enrichment</div>
-      ${[['Muscle Contraction','p=0.0001',95],['Cell Cycle Regulation','p=0.0004',78],['Signal Transduction','p=0.0012',62]].map(([n,p,w])=>`
-        <div class="go-bar"><div class="go-name"><span>${n}</span><span style="font-family:var(--mono);font-size:10px;color:var(--green)">${p}</span></div><div class="go-track"><div class="go-fill" style="width:${w}%"></div></div></div>
-      `).join('')}
+      <div id="go-enrichment"></div>
     </div>
   </div>
 </div>
-</div></body></html>
+</div>
+<script>
+// Render heatmap
+(function() {
+  const genes = ['MYH7','MYH6','TNNT2','ACTC1','TPM1','NPPA','NPPB','PLN'];
+  const vals = [
+    [0.05,0.3,0.5,0.6,0.4],
+    [0.1,0.35,0.55,0.65,0.45],
+    [0.15,0.25,0.45,0.55,0.35],
+    [0.2,0.4,0.6,0.7,0.5],
+    [0.08,0.2,0.4,0.5,0.3],
+    [0.05,0.5,0.7,0.8,0.55],
+    [0.1,0.55,0.75,0.85,0.6],
+    [0.3,0.1,0.05,0.08,0.25]
+  ];
+  const container = document.getElementById('heatmap-grid');
+  let html = '';
+  genes.forEach((gene, i) => {
+    const row = vals[i] || [0.2,0.4,0.5,0.6,0.3];
+    html += '<div style="display:grid;grid-template-columns:60px repeat(5,1fr);gap:3px;margin-bottom:3px">';
+    html += '<div class="gene-label">' + gene + '</div>';
+    row.forEach(v => {
+      const r = Math.round(v*200);
+      const b = Math.round((1-v)*255);
+      html += '<div class="heatmap-cell" style="background:rgb(' + r + ',' + Math.round(v*50) + ',' + b + ')"></div>';
+    });
+    html += '</div>';
+  });
+  container.innerHTML = html;
+})();
+
+// Render volcano plot
+(function() {
+  const container = document.getElementById('volcano-plot');
+  let circles = '';
+  for (let i = 0; i < 80; i++) {
+    const x = 10 + Math.random() * 180;
+    const y = 10 + Math.random() * 120;
+    const sig = Math.random() > 0.85;
+    const r = sig ? 3 : 1.5;
+    const fill = sig ? (x < 100 ? '#ff4444' : '#00ff88') : '#1a3040';
+    const opacity = sig ? 0.9 : 0.5;
+    circles += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + fill + '" opacity="' + opacity + '"/>';
+  }
+  container.innerHTML = '<svg width="100%" height="100%" viewBox="0 0 200 140">' +
+    circles +
+    '<line x1="100" y1="0" x2="100" y2="140" stroke="#1a3040" stroke-width="1" stroke-dasharray="4"/>' +
+    '<line x1="0" y1="110" x2="200" y2="110" stroke="#1a3040" stroke-width="1" stroke-dasharray="4"/>' +
+    '<text x="190" y="12" fill="#5a8a9a" font-size="7" text-anchor="end" font-family="monospace">-log&#8321;&#8320;(p)</text>' +
+    '</svg>';
+})();
+
+// Render GO enrichment
+(function() {
+  const data = [
+    ['Muscle Contraction', 'p=0.0001', 95],
+    ['Cell Cycle Regulation', 'p=0.0004', 78],
+    ['Signal Transduction', 'p=0.0012', 62]
+  ];
+  const container = document.getElementById('go-enrichment');
+  let html = '';
+  data.forEach(([name, p, width]) => {
+    html += '<div class="go-bar"><div class="go-name"><span>' + name + '</span><span style="font-family:var(--mono);font-size:10px;color:var(--green)">' + p + '</span></div><div class="go-track"><div class="go-fill" style="width:' + width + '%"></div></div></div>';
+  });
+  container.innerHTML = html;
+})();
+</script>
+</body></html>
