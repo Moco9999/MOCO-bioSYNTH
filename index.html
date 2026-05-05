@@ -113,71 +113,43 @@
             50% { transform: translate(-5px, -25px); }
             75% { transform: translate(-8px, -10px); }
         }
-        @keyframes rotateDNA {
-            from { transform: rotateX(58deg) rotateZ(0deg) rotateY(0deg); }
-            to { transform: rotateX(58deg) rotateZ(360deg) rotateY(360deg); }
-        }
-
         .dynamic-float {
             animation: dynamicFloat 10s ease-in-out infinite;
         }
 
         .dna-container {
-            mask-image: linear-gradient(to left, black 40%, transparent 95%);
-            -webkit-mask-image: linear-gradient(to left, black 40%, transparent 95%);
-            perspective: 1600px;
+            mask-image: linear-gradient(to left, black 55%, transparent 98%);
+            -webkit-mask-image: linear-gradient(to left, black 55%, transparent 98%);
         }
 
-        .dna-3d-model {
+        .dna-canvas-wrap {
             position: relative;
-            width: 220px;
-            height: 1200px; /* Extended height */
-            perspective: 1200px;
-            transform-style: preserve-3d;
-            animation: rotateDNA 28s linear infinite;
-            margin: 0 auto;
-            filter: drop-shadow(0 0 28px rgba(0,240,255,.35));
+            width: min(620px, 52vw);
+            height: 100%;
+            filter: drop-shadow(0 0 30px rgba(0,240,255,.35));
         }
 
-        .dna-segment {
+        #dna-canvas {
             position: absolute;
+            inset: 0;
             width: 100%;
-            height: 28px;
-            transform-style: preserve-3d;
+            height: 100%;
         }
 
-        .backbone {
+        .dna-canvas-wrap::before,
+        .dna-canvas-wrap::after {
+            content: '';
             position: absolute;
-            width: 16px;
-            height: 16px;
-            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #7df4ff 24%, #00F0FF 58%, #006970 100%);
-            border-radius: 50%;
-            box-shadow: 0 0 22px rgba(0, 240, 255, 0.9), inset -3px -4px 6px rgba(0,0,0,0.35);
-            transform: translateZ(16px);
-        }
-
-        .backbone.left { left: 0; background: radial-gradient(circle at 35% 35%, #fff 0%, #00f0ff 45%, #004f54 100%); }
-        .backbone.right { right: 0; background: radial-gradient(circle at 35% 35%, #fff 0%, #d1bcff 45%, #7213ff 100%); }
-
-        .base-pair-connector {
-            position: absolute;
-            height: 5px;
-            background: linear-gradient(90deg, 
-                rgba(0, 240, 255, 0.95) 0%, 
-                rgba(125, 244, 255, 0.35) 42%, 
-                rgba(209, 188, 255, 0.35) 58%, 
-                rgba(114, 19, 255, 0.95) 100%
-            );
-            top: 6px;
-            left: 12px;
-            right: 12px;
+            inset: 8% 0;
+            pointer-events: none;
             border-radius: 999px;
-            box-shadow: 0 0 18px rgba(0, 240, 255, 0.4);
-            transform: translateZ(6px);
+            background: radial-gradient(ellipse at center, rgba(0,240,255,.18), transparent 62%);
+            filter: blur(35px);
         }
-
-        /* Logic to space segments over the new height */
-        .dna-segment:nth-child(n) { top: calc(var(--i) * 3%); transform: rotateY(calc(var(--i) * 34deg)) translateZ(10px); }
+        .dna-canvas-wrap::after {
+            background: radial-gradient(ellipse at center, rgba(114,19,255,.16), transparent 65%);
+            transform: translateX(70px);
+        }
 
         .site-logo {
             background: transparent;
@@ -402,43 +374,9 @@
         </div>
         
         <!-- DNA Visualizer -->
-        <div class="absolute right-[5%] top-0 w-[50vw] h-full z-10 dna-container flex items-center justify-center dynamic-float" style="animation-delay: -2s;">
-            <div class="relative w-full h-full opacity-60">
-                <div class="absolute inset-0 bg-gradient-to-l from-primary/10 to-transparent blur-[150px] rounded-full"></div>
-                <div class="dna-3d-model">
-                    <!-- DNA Segments generated with CSS variables for positioning -->
-                    <div class="dna-segment" style="--i:0"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:1"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:2"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:3"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:4"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:5"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:6"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:7"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:8"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:9"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:10"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:11"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:12"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:13"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:14"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:15"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:16"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:17"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:18"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:19"><div class="backbone left"></div><div class="base-pair-connector"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:20"><div class="backbone left"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:21"><div class="backbone left"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:22"><div class="backbone left"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:23"><div class="backbone left"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:24"><div class="backbone left"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:25"><div class="backbone left"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:26"><div class="backbone left"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:27"><div class="backbone left"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:28"><div class="backbone left"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:29"><div class="backbone left"></div><div class="backbone right"></div></div>
-                    <div class="dna-segment" style="--i:30"><div class="backbone left"></div><div class="backbone right"></div></div>
-                </div>
+        <div class="absolute right-[2%] top-0 w-[56vw] h-full z-10 dna-container flex items-center justify-center pointer-events-none">
+            <div class="dna-canvas-wrap opacity-90">
+                <canvas id="dna-canvas" aria-label="Animated DNA double helix"></canvas>
             </div>
         </div>
     </section>
@@ -696,6 +634,118 @@
 </main>
 
 <script>
+    function initDnaCanvas() {
+        const canvas = document.getElementById('dna-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let width = 0;
+        let height = 0;
+        let dpr = 1;
+
+        function resize() {
+            const rect = canvas.getBoundingClientRect();
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            width = Math.max(1, rect.width);
+            height = Math.max(1, rect.height);
+            canvas.width = Math.floor(width * dpr);
+            canvas.height = Math.floor(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function glowLine(x1, y1, x2, y2, color, widthLine, alpha = 1) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.lineCap = 'round';
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 16;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = widthLine;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function orb(x, y, r, color, alpha) {
+            const g = ctx.createRadialGradient(x - r * .35, y - r * .35, 1, x, y, r * 2.5);
+            g.addColorStop(0, 'rgba(255,255,255,.95)');
+            g.addColorStop(.25, color);
+            g.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(x, y, r * 2.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function draw(t) {
+            const time = t * 0.001;
+            ctx.clearRect(0, 0, width, height);
+            ctx.save();
+            ctx.translate(width * .50, height * .50);
+            ctx.rotate(-0.18);
+            ctx.translate(0, -height * .50);
+
+            const steps = 74;
+            const amp = Math.min(width * .30, 150);
+            const centerX = 0;
+            const startY = height * .02;
+            const spacing = height * .96 / steps;
+            const pointsA = [];
+            const pointsB = [];
+
+            for (let i = 0; i <= steps; i++) {
+                const y = startY + i * spacing;
+                const phase = i * 0.42 + time * 2.15;
+                const depth = (Math.cos(phase) + 1) / 2;
+                const x = centerX + Math.sin(phase) * amp;
+                const xb = centerX + Math.sin(phase + Math.PI) * amp;
+                pointsA.push({ x, y, depth });
+                pointsB.push({ x: xb, y, depth: 1 - depth });
+            }
+
+            ctx.globalCompositeOperation = 'lighter';
+            for (let i = 0; i < steps; i++) {
+                const a = pointsA[i], an = pointsA[i + 1], b = pointsB[i], bn = pointsB[i + 1];
+                glowLine(a.x, a.y, an.x, an.y, 'rgba(0,240,255,.72)', 2.6 + a.depth * 2, .55 + a.depth * .35);
+                glowLine(b.x, b.y, bn.x, bn.y, 'rgba(177,120,255,.72)', 2.6 + b.depth * 2, .55 + b.depth * .35);
+            }
+
+            for (let i = 0; i <= steps; i += 2) {
+                const a = pointsA[i];
+                const b = pointsB[i];
+                const front = a.depth > b.depth;
+                const alpha = .28 + Math.max(a.depth, b.depth) * .52;
+                glowLine(a.x, a.y, b.x, b.y, front ? 'rgba(125,244,255,.65)' : 'rgba(209,188,255,.45)', 1.8, alpha);
+            }
+
+            for (let i = 0; i <= steps; i++) {
+                const a = pointsA[i];
+                const b = pointsB[i];
+                orb(a.x, a.y, 3.4 + a.depth * 5.8, 'rgba(0,240,255,.95)', .38 + a.depth * .62);
+                orb(b.x, b.y, 3.4 + b.depth * 5.8, 'rgba(177,120,255,.95)', .38 + b.depth * .62);
+            }
+
+            ctx.restore();
+            requestAnimationFrame(draw);
+        }
+
+        resize();
+        window.addEventListener('resize', resize);
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('DOMContentLoaded', initDnaCanvas);
+
     function toggleLogin() {
         const panel = document.getElementById('auth-drawer');
         const overlay = document.getElementById('overlay');
