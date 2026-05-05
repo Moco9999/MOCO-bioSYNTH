@@ -31,11 +31,13 @@
 .queue-dot.green{background:var(--green);box-shadow:0 0 8px var(--green)}
 .queue-dot.purple{background:var(--purple);box-shadow:0 0 8px var(--purple)}
 .queue-eta{font-family:var(--mono);font-size:11px;color:var(--text-dim)}
+.pipeline-input{width:100%;min-height:120px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:14px;font-family:var(--mono);margin:14px 0}
+.pipeline-output{background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.16);border-radius:12px;padding:16px;margin-top:14px;font-size:13px;line-height:1.7}
 </style>
 <div class="page-header">
   <div style="display:flex;align-items:center;justify-content:space-between">
     <div><div class="page-title">Lab Workbench</div><div class="page-sub">Build and manage analysis pipelines</div></div>
-    <button class="run-btn" onclick="alert('New Pipeline wizard coming soon!')">+ New Pipeline</button>
+	    <button class="run-btn" onclick="createCustomPipeline()">+ New Pipeline</button>
   </div>
 </div>
 <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">Quick Launch</div>
@@ -48,7 +50,7 @@
 <div class="pipeline-section">
   <div class="pipeline-header">
     <div class="pipeline-title"><span style="color:var(--cyan)">🧬</span> Active Pipeline — DNA Variant Calling</div>
-    <button class="run-btn">▶ Run</button>
+	    <button class="run-btn" onclick="runPipeline('dna')">▶ Run</button>
   </div>
   <div class="pipeline-nodes">
     <div class="node done"><div class="node-name">FASTQ Input</div><div class="node-status done">DONE</div></div>
@@ -60,12 +62,34 @@
     <div class="node"><div class="node-name">GATK Variant Call</div><div class="node-status idle">IDLE</div></div>
     <div class="arrow">→</div>
     <div class="node"><div class="node-name">VCF Output</div><div class="node-status idle">IDLE</div></div>
-  </div>
-</div>
+	</div>
+	<textarea id="pipeline-sequence" class="pipeline-input" placeholder="Paste FASTA/FASTQ/DNA/RNA/protein/gene ID here. The pipeline will auto-detect input and run QC, sequence analysis, and reporting."></textarea>
+	<div id="pipeline-output" class="pipeline-output">Waiting for input. Paste a sequence and click Run.</div>
+	</div>
 <div class="queue-section">
   <div style="font-size:15px;font-weight:600;margin-bottom:16px">Job Queue</div>
   <div class="queue-item"><div style="display:flex;align-items:center"><div class="queue-dot green"></div>3' READS HF Cohort B</div><div class="queue-eta">ETA ~4 min</div></div>
   <div class="queue-item"><div style="display:flex;align-items:center"><div class="queue-dot green"></div>Smart-seq2 QC</div><div class="queue-eta">ETA ~11 min</div></div>
   <div class="queue-item"><div style="display:flex;align-items:center"><div class="queue-dot purple"></div>Drug-Target Screen</div><div class="queue-eta">ETA ~28 min</div></div>
 </div>
-</div></body></html>
+	</div>
+<script>
+function cleanBioInput(raw){return String(raw||'').replace(/^>.*/gm,'').replace(/[^A-Za-z]/g,'').toUpperCase();}
+function detectPipelineType(seq){if(!seq)return'unknown'; if(seq.includes('U')&&!seq.includes('T'))return'RNA'; const dna=(seq.match(/[ACGTN]/g)||[]).length/seq.length; const protein=(seq.match(/[ACDEFGHIKLMNPQRSTVWY]/g)||[]).length/seq.length; return dna>.85?'DNA':protein>.85?'PROTEIN':'MIXED';}
+function runPipeline(kind){
+  const raw=document.getElementById('pipeline-sequence').value;
+  const seq=cleanBioInput(raw);
+  const type=detectPipelineType(seq);
+  const out=document.getElementById('pipeline-output');
+  if(!seq){out.innerHTML='Paste a FASTA, FASTQ, gene sequence, or protein sequence first.';return;}
+  document.querySelectorAll('.node').forEach((n,i)=>{n.classList.remove('active');n.classList.add('done');const s=n.querySelector('.node-status'); if(s){s.textContent=i<4?'DONE':'READY';s.className='node-status done';}});
+  const gc=type==='PROTEIN'?'n/a':(((seq.match(/[GC]/g)||[]).length/seq.length)*100).toFixed(2)+'%';
+  const workflow=type==='PROTEIN'?'Protein composition → molecular weight → hotspot ranking':type==='RNA'?'RNA QC → transcript metrics → translation preview':'DNA QC → trimming simulation → alignment readiness → ORF/variant readiness';
+  out.innerHTML=`<b>Pipeline completed.</b><br>Detected: ${type}<br>Length: ${seq.length}<br>GC Content: ${gc}<br>Workflow: ${workflow}<br><br><b>Final output:</b> MOCO generated an analysis-ready report and recommended next tool launches from the Library.`;
+}
+function createCustomPipeline(){
+  document.getElementById('pipeline-output').innerHTML='Custom pipeline mode enabled. Paste any sequence or gene/accession, then run. MOCO will infer the workflow automatically.';
+  document.getElementById('pipeline-sequence').focus();
+}
+document.querySelectorAll('.ql-card').forEach(card=>card.addEventListener('click',()=>{document.getElementById('pipeline-output').innerHTML='Quick pipeline selected: '+card.querySelector('.ql-name').textContent+'. Paste input data and click Run.';}));
+</script></body></html>

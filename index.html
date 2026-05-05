@@ -114,8 +114,8 @@
             75% { transform: translate(-8px, -10px); }
         }
         @keyframes rotateDNA {
-            from { transform: rotateY(0deg); }
-            to { transform: rotateY(360deg); }
+            from { transform: rotateX(58deg) rotateZ(0deg) rotateY(0deg); }
+            to { transform: rotateX(58deg) rotateZ(360deg) rotateY(360deg); }
         }
 
         .dynamic-float {
@@ -125,54 +125,66 @@
         .dna-container {
             mask-image: linear-gradient(to left, black 40%, transparent 95%);
             -webkit-mask-image: linear-gradient(to left, black 40%, transparent 95%);
+            perspective: 1600px;
         }
 
         .dna-3d-model {
             position: relative;
-            width: 140px;
+            width: 220px;
             height: 1200px; /* Extended height */
             perspective: 1200px;
             transform-style: preserve-3d;
-            animation: rotateDNA 20s linear infinite;
+            animation: rotateDNA 28s linear infinite;
             margin: 0 auto;
+            filter: drop-shadow(0 0 28px rgba(0,240,255,.35));
         }
 
         .dna-segment {
             position: absolute;
             width: 100%;
-            height: 24px;
+            height: 28px;
             transform-style: preserve-3d;
         }
 
         .backbone {
             position: absolute;
-            width: 12px;
-            height: 12px;
-            background: #00F0FF;
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #7df4ff 24%, #00F0FF 58%, #006970 100%);
             border-radius: 50%;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.8), inset -2px -2px 4px rgba(0,0,0,0.4);
+            box-shadow: 0 0 22px rgba(0, 240, 255, 0.9), inset -3px -4px 6px rgba(0,0,0,0.35);
+            transform: translateZ(16px);
         }
 
-        .backbone.left { left: 0; }
-        .backbone.right { right: 0; }
+        .backbone.left { left: 0; background: radial-gradient(circle at 35% 35%, #fff 0%, #00f0ff 45%, #004f54 100%); }
+        .backbone.right { right: 0; background: radial-gradient(circle at 35% 35%, #fff 0%, #d1bcff 45%, #7213ff 100%); }
 
         .base-pair-connector {
             position: absolute;
-            height: 2px;
+            height: 5px;
             background: linear-gradient(90deg, 
-                rgba(0, 240, 255, 0.8) 0%, 
-                rgba(0, 240, 255, 0.1) 40%, 
-                rgba(0, 240, 255, 0.1) 60%, 
-                rgba(0, 240, 255, 0.8) 100%
+                rgba(0, 240, 255, 0.95) 0%, 
+                rgba(125, 244, 255, 0.35) 42%, 
+                rgba(209, 188, 255, 0.35) 58%, 
+                rgba(114, 19, 255, 0.95) 100%
             );
-            top: 5px;
-            left: 6px;
-            right: 6px;
-            box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+            top: 6px;
+            left: 12px;
+            right: 12px;
+            border-radius: 999px;
+            box-shadow: 0 0 18px rgba(0, 240, 255, 0.4);
+            transform: translateZ(6px);
         }
 
         /* Logic to space segments over the new height */
-        .dna-segment:nth-child(n) { top: calc(var(--i) * 3%); transform: rotateY(calc(var(--i) * 36deg)); }
+        .dna-segment:nth-child(n) { top: calc(var(--i) * 3%); transform: rotateY(calc(var(--i) * 34deg)) translateZ(10px); }
+
+        .site-logo {
+            background: transparent;
+            transition: opacity .25s ease, transform .25s ease;
+            filter: drop-shadow(0 0 12px rgba(0,240,255,.22));
+        }
+        .site-logo.is-hidden-on-scroll { opacity: 0; transform: translateY(-12px); pointer-events: none; }
 
         #auth-drawer {
             transform: translateX(100%);
@@ -200,7 +212,7 @@
 <div class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm" id="overlay"></div>
 <div class="fixed top-0 right-0 h-full w-full max-w-md z-[70] bg-surface-container-lowest border-l border-outline-variant/20 p-12 shadow-2xl overflow-y-auto" id="auth-drawer">
     <div class="flex justify-between items-center mb-12">
-        <h3 id="auth-title" class="text-3xl font-black font-headline text-on-surface">Sign In</h3>
+        <h3 id="auth-title" class="text-3xl font-black font-headline text-on-surface">Login</h3>
         <button class="material-symbols-outlined text-on-surface-variant hover:text-primary-container transition-colors" onclick="toggleLogin()">close</button>
     </div>
 
@@ -217,7 +229,7 @@
             </div>
             <div id="login-error" class="hidden text-sm text-error mt-2">Invalid email or password.</div>
             <div class="pt-2">
-                <button class="w-full synthetic-gradient text-on-primary font-label font-bold py-4 rounded-md text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform" onclick="handleLogin()">Authorize Protocol</button>
+                <button class="w-full synthetic-gradient text-on-primary font-label font-bold py-4 rounded-md text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform" onclick="handleLogin()">Login</button>
             </div>
             <button class="w-full border border-outline-variant/30 text-on-surface font-label font-bold py-4 rounded-md text-xs uppercase tracking-widest hover:bg-surface-bright transition-all" onclick="openGooglePanel()">Continue with Google</button>
             
@@ -274,38 +286,85 @@
 
 <!-- Google Login Modal -->
 <div id="google-modal" class="hidden fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6">
-    <div class="w-full max-w-md rounded-[1.5rem] bg-white text-[#202124] p-5 shadow-[0_24px_84px_rgba(60,64,67,0.15)] border border-slate-200">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <p class="text-xs uppercase tracking-[0.3em] text-slate-500 mb-2">Sign in with Google</p>
+    <div class="w-full max-w-md rounded-[1.5rem] bg-white text-[#202124] p-8 shadow-[0_24px_84px_rgba(60,64,67,0.15)] border border-slate-200">
+        <!-- Close Button -->
+        <div class="flex justify-end mb-2">
+            <button class="text-slate-400 hover:text-slate-900 text-2xl" onclick="closeGooglePanel()">×</button>
+        </div>
+
+        <!-- Step 1: Account Selection -->
+        <div id="google-step-1">
+            <div class="text-center mb-8">
+                <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" class="h-6 mx-auto mb-4" alt="Google">
                 <h3 class="text-2xl font-semibold">Choose an account</h3>
+                <p class="text-slate-600 mt-2">to continue to MOCO</p>
             </div>
-            <button class="text-slate-500 hover:text-slate-900 text-2xl" onclick="closeGooglePanel()">×</button>
-        </div>
-        <div id="google-account-list" class="space-y-3">
-            <button class="w-full text-left rounded-3xl border border-slate-200 bg-[#f8f9fa] p-4 transition-all hover:border-slate-300" onclick="selectGoogleAccount(this, 'alice@example.com', 'Alice Keene', 'Data Analyst')">
-                <div class="flex items-center gap-4">
-                    <div class="h-11 w-11 rounded-full bg-[#DB4437] text-white flex items-center justify-center font-semibold">A</div>
-                    <div>
-                        <p class="font-medium text-slate-900">Alice Keene</p>
-                        <p class="text-sm text-slate-600">alice@example.com</p>
+            <div id="google-account-list" class="space-y-3">
+                <button class="w-full text-left rounded-xl border border-slate-200 p-4 transition-all hover:bg-slate-50" onclick="selectGoogleAccount(this, 'alice@example.com', 'Alice Keene', 'Data Analyst')">
+                    <div class="flex items-center gap-4">
+                        <div class="h-10 w-10 rounded-full bg-[#DB4437] text-white flex items-center justify-center font-semibold">A</div>
+                        <div>
+                            <p class="font-medium text-slate-900">Alice Keene</p>
+                            <p class="text-sm text-slate-600">alice@example.com</p>
+                        </div>
                     </div>
-                </div>
-            </button>
-            <button class="w-full text-left rounded-3xl border border-slate-200 bg-[#f8f9fa] p-4 transition-all hover:border-slate-300" onclick="selectGoogleAccount(this, 'jordan@example.com', 'Jordan Cruz', 'Lab Scientist')">
-                <div class="flex items-center gap-4">
-                    <div class="h-11 w-11 rounded-full bg-[#4285F4] text-white flex items-center justify-center font-semibold">J</div>
-                    <div>
-                        <p class="font-medium text-slate-900">Jordan Cruz</p>
-                        <p class="text-sm text-slate-600">jordan@example.com</p>
+                </button>
+                <button class="w-full text-left rounded-xl border border-slate-200 p-4 transition-all hover:bg-slate-50" onclick="selectGoogleAccount(this, 'jordan@example.com', 'Jordan Cruz', 'Lab Scientist')">
+                    <div class="flex items-center gap-4">
+                        <div class="h-10 w-10 rounded-full bg-[#4285F4] text-white flex items-center justify-center font-semibold">J</div>
+                        <div>
+                            <p class="font-medium text-slate-900">Jordan Cruz</p>
+                            <p class="text-sm text-slate-600">jordan@example.com</p>
+                        </div>
                     </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Google Password -->
+        <div id="google-step-2" class="hidden">
+            <div class="text-center mb-8">
+                <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" class="h-6 mx-auto mb-4" alt="Google">
+                <h3 class="text-2xl font-semibold">Welcome</h3>
+                <div class="flex items-center justify-center gap-2 mt-2 px-3 py-1 rounded-full border border-slate-200 w-fit mx-auto">
+                    <div id="selected-account-avatar" class="h-5 w-5 rounded-full bg-[#4285F4] text-white flex items-center justify-center text-[10px]">J</div>
+                    <span id="selected-account-email" class="text-sm font-medium">jordan@example.com</span>
                 </div>
-            </button>
+            </div>
+            <div class="space-y-6">
+                <div class="relative">
+                    <input type="password" id="google-password-input" class="w-full px-4 py-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="Enter your password">
+                    <div class="text-xs text-blue-600 font-medium mt-2 cursor-pointer hover:underline">Forgot password?</div>
+                    <div id="google-password-error" class="hidden text-sm text-red-600 mt-2"></div>
+                </div>
+                <div class="flex justify-between items-center pt-4">
+                    <button class="text-blue-600 font-medium text-sm hover:bg-blue-50 px-4 py-2 rounded" onclick="goToGoogleStep(1)">Back</button>
+                    <button class="bg-[#1a73e8] text-white font-medium px-8 py-2 rounded-md hover:bg-blue-700 transition-all shadow-sm" onclick="validateGooglePassword()">Next</button>
+                </div>
+            </div>
         </div>
-        <div class="mt-6 rounded-3xl bg-slate-100 p-4 text-sm text-slate-700">
-            Choose an account to continue to MOCO. The selected account will be used to authenticate your session.
+
+        <!-- Step 3: Create MOCO Password -->
+        <div id="google-step-3" class="hidden">
+            <div class="text-center mb-8">
+                <div class="h-12 w-12 bg-primary-container rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <span class="material-symbols-outlined text-on-primary">security</span>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900">Secure your MOCO account</h3>
+                <p class="text-slate-600 mt-2">Create a separate password for MOCO access</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">New Password</label>
+                    <input type="password" id="moco-new-password" class="w-full px-4 py-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition-all" placeholder="••••••••">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Confirm Password</label>
+                    <input type="password" id="moco-confirm-password" class="w-full px-4 py-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition-all" placeholder="••••••••">
+                </div>
+                <button class="w-full bg-[#006970] text-white font-bold py-4 rounded-md mt-6 hover:bg-[#004f54] transition-all shadow-lg shadow-cyan-900/10" onclick="confirmGoogleLogin()">Complete Setup</button>
+            </div>
         </div>
-        <button id="google-continue" class="w-full bg-[#1a73e8] text-white font-medium py-3 rounded-3xl mt-6 disabled:opacity-50" disabled onclick="confirmGoogleLogin()">Continue</button>
     </div>
 </div>
 
@@ -313,7 +372,7 @@
 <header class="fixed top-0 w-full z-50 bg-transparent py-8 transition-all duration-300">
     <nav class="flex justify-between items-center px-12 w-full">
         <div class="flex items-center gap-3">
-            <img alt="MOCO Logo" class="h-10 w-auto" src="https://lh3.googleusercontent.com/aida/ADBb0uiVZxyt40kVCpDaVCjbjk3xJcutItS5X7j_07xJLedNKgZMeblXcFQPeGAKoacR31-kZAwc9DEqEU2Sx9dFGmm_aWQkzKLtspQbQkLH07IlXjcMWx1GDYTbAourUgiY1fWLz73PQ8lUogtkq5HTcssi6Iz9x8wH-LlXxd_PFSxfDcz_jW4EeJD-GOYeSr34KnCxl3HrMuLqBc7NAcLnW72zznrXk6UTOX_SntypJDD_kjkC2hkmVJC-t-_wm-dW-O0tRJ948WnaYg8"/>
+            <img alt="MOCO Logo" class="site-logo h-20 w-auto" src="MOCO-logo-transparent.png"/>
         </div>
         <div class="hidden md:flex gap-10 items-center">
             <a class="font-label text-sm uppercase tracking-wider text-[#e2e2e8]/70 hover:text-[#00F0FF] transition-all duration-300" href="#product-section">Product</a>
@@ -384,41 +443,11 @@
         </div>
     </section>
 
-    <!-- Core Protocols (Product Section) -->
-    <section class="py-32 px-12 md:px-24 bg-surface-container-low border-y border-outline-variant/10" id="product-section">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="group relative p-10 bg-surface-container rounded-xl overflow-hidden hover:bg-surface-bright transition-all duration-500">
-                <div class="absolute top-0 left-0 w-1 h-full bg-primary-container scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-top"></div>
-                <div class="relative z-10">
-                    <span class="material-symbols-outlined text-primary-container text-4xl mb-6 block" style="font-variation-settings: 'FILL' 1;">dataset_linked</span>
-                    <h3 class="text-2xl font-bold font-headline mb-4">Precision Alignment</h3>
-                    <p class="text-on-surface-variant font-body leading-relaxed">Advanced sequence alignment algorithms optimized for noisy nanopore data and short-read precision matching.</p>
-                </div>
-            </div>
-            <div class="group relative p-10 bg-surface-container rounded-xl overflow-hidden hover:bg-surface-bright transition-all duration-500">
-                <div class="absolute top-0 left-0 w-1 h-full bg-primary-container scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-top"></div>
-                <div class="relative z-10">
-                    <span class="material-symbols-outlined text-primary-container text-4xl mb-6 block">model_training</span>
-                    <h3 class="text-2xl font-bold font-headline mb-4">Structural Simulation</h3>
-                    <p class="text-on-surface-variant font-body leading-relaxed">Neural-fold protein prediction with atomic-level accuracy, identifying tertiary structures in milliseconds.</p>
-                </div>
-            </div>
-            <div class="group relative p-10 bg-surface-container rounded-xl overflow-hidden hover:bg-surface-bright transition-all duration-500">
-                <div class="absolute top-0 left-0 w-1 h-full bg-primary-container scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-top"></div>
-                <div class="relative z-10">
-                    <span class="material-symbols-outlined text-primary-container text-4xl mb-6 block">hub</span>
-                    <h3 class="text-2xl font-bold font-headline mb-4">Orchestrated Workflows</h3>
-                    <p class="text-on-surface-variant font-body leading-relaxed">Unified pipelines connecting transcriptomics, proteomics, and metabolomics into a single narrative flow.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Analytical Suite (Features Section) -->
     <section class="py-48 bg-[#0c0e12]" id="analytical-suite">
         <div class="px-12 md:px-24 mb-32 text-center md:text-left">
             <h2 class="font-label text-xs uppercase tracking-[0.4em] text-primary-container mb-4">Analytical Suite</h2>
-            <h3 class="text-6xl font-black font-headline text-on-surface max-w-3xl">Redefining Computational Biology.</h3>
+            <h3 class="text-6xl font-black font-headline text-on-surface max-w-4xl">Unified DNA, RNA, and Protein workflows in one browser-native platform.</h3>
         </div>
         
         <!-- NGS & Variant Calling -->
@@ -434,17 +463,28 @@
                 </div>
             </div>
             <div class="w-full md:w-1/2 space-y-6">
-                <h4 class="text-4xl font-bold font-headline text-on-surface">Next-Gen Sequencing & Variant Calling</h4>
-                <p class="text-on-surface-variant font-body text-lg leading-relaxed">Leverage massive parallel processing for high-throughput genomic data. Our variant calling pipeline identifies SNVs, Indels, and SVs with unprecedented precision using machine learning refinement.</p>
-                <button class="font-label text-sm uppercase tracking-widest text-[#00F0FF] border-b border-[#00F0FF]/30 pb-2 hover:border-[#00F0FF] transition-all" onclick="toggleLogin()">Deep Dive NGS</button>
+                <h4 class="text-4xl font-bold font-headline text-on-surface">Next Gen Sequencing & Variant Calling</h4>
+                <p class="text-on-surface-variant font-body text-lg leading-relaxed">Explore advanced Next-Gen Sequencing (NGS) workflows and comprehensive variant calling analysis for precise genomic insights.</p>
+                <button class="font-label text-sm uppercase tracking-widest text-[#00F0FF] border-b border-[#00F0FF]/30 pb-2 hover:border-[#00F0FF] transition-all" onclick="toggleDeepDive('ngs-deep-dive')">Deep Dive NGS</button>
+                <div id="ngs-deep-dive" class="hidden mt-6 space-y-4 text-on-surface-variant font-body text-base leading-relaxed">
+                    <p>Next-Generation Sequencing (NGS) has revolutionized genomics, enabling rapid and cost-effective sequencing of entire genomes and transcriptomes. It encompasses various technologies, including:</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Whole Genome Sequencing (WGS): Comprehensive analysis of an organism\'s entire DNA sequence.</li>
+                        <li>Whole Exome Sequencing (WES): Focuses on the protein-coding regions of the genome, which are most likely to contain disease-causing variants.</li>
+                        <li>RNA Sequencing (RNA-Seq): Quantifies and profiles RNA to study gene expression, alternative splicing, and novel transcripts.</li>
+                        <li>ChIP-Seq: Identifies DNA binding sites of proteins, providing insights into gene regulation.</li>
+                    </ul>
+                    <p>Variant calling is a critical step in NGS data analysis, identifying genetic variations such as Single Nucleotide Polymorphisms (SNPs), insertions, and deletions (indels). This process typically involves alignment of reads to a reference genome, followed by sophisticated algorithms to detect and filter variants with high accuracy.</p>
+                    <p>MOCO\'s NGS & Variant Calling suite offers robust tools for quality control, alignment, variant detection, annotation, and visualization, streamlining your genomic research from raw data to actionable biological insights.</p>
+                </div>
             </div>
         </div>
 
         <!-- RNA-seq -->
         <div class="flex flex-col-reverse md:flex-row items-center gap-16 md:gap-24 px-12 md:px-24 mb-48">
             <div class="w-full md:w-1/2 space-y-6">
-                <h4 class="text-4xl font-bold font-headline text-on-surface">Advanced RNA-seq Analytics</h4>
-                <p class="text-on-surface-variant font-body text-lg leading-relaxed">Uncover the complexities of the transcriptome. From differential expression to isoform quantification, our engine visualizes the dynamic landscape of cellular gene regulation in high resolution.</p>
+                <h4 class="text-4xl font-bold font-headline text-on-surface">Advanced RNA-Seq Analysis</h4>
+                <p class="text-on-surface-variant font-body text-lg leading-relaxed">Perform comprehensive differential expression analysis, isoform quantification, and gene fusion detection with advanced algorithms and interactive visualizations.</p>
                 <button class="font-label text-sm uppercase tracking-widest text-[#00F0FF] border-b border-[#00F0FF]/30 pb-2 hover:border-[#00F0FF] transition-all" onclick="toggleLogin()">Explore Transcriptomics</button>
             </div>
             <div class="w-full md:w-1/2 group">
@@ -472,7 +512,7 @@
             </div>
             <div class="w-full md:w-1/2 space-y-6">
                 <h4 class="text-4xl font-bold font-headline text-on-surface">Molecular Docking & CADD</h4>
-                <p class="text-on-surface-variant font-body text-lg leading-relaxed">Accelerate drug discovery with Computer-Aided Drug Design. Simulate protein-ligand interactions with physics-based modeling and neural-network affinity prediction to identify lead compounds faster.</p>
+                <p class="text-on-surface-variant font-body text-lg leading-relaxed">Analyze interactions between molecules with atomic precision to identify potential drug candidates and optimize binding affinities for Computer-Aided Drug Design (CADD).</p>
                 <button class="font-label text-sm uppercase tracking-widest text-[#00F0FF] border-b border-[#00F0FF]/30 pb-2 hover:border-[#00F0FF] transition-all" onclick="toggleLogin()">Start Simulation</button>
             </div>
         </div>
@@ -482,9 +522,9 @@
     <section class="py-48 px-12 md:px-24 bg-surface-container-lowest relative overflow-hidden" id="initiate-synthesis">
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[100vw] h-px bg-gradient-to-r from-transparent via-[#00F0FF]/30 to-transparent"></div>
         <div class="relative z-10 text-center max-w-4xl mx-auto">
-            <h2 class="text-7xl font-black font-headline text-on-surface mb-8 text-glow uppercase tracking-tighter">Initiate Synthesis</h2>
+            <h2 class="text-7xl font-black font-headline text-on-surface mb-8 text-glow uppercase tracking-tighter">Orchestrate Your Study</h2>
             <p class="text-xl font-light text-on-surface-variant/80 mb-12 max-w-2xl mx-auto font-body">
-                Ready to transform your multi-omics research? Join the next generation of computational biology with MOCO's unified orchestration engine.
+                Designed for students, active researchers, and full lab teams — MOCO removes tool fragmentation and brings institutional-grade analysis to a single SaaS interface.
             </p>
             <div class="flex flex-col sm:flex-row justify-center gap-6">
                 <button class="synthetic-gradient text-on-primary font-label font-bold px-12 py-5 rounded-md text-sm uppercase tracking-widest shadow-[0_15px_35px_rgba(0,240,255,0.2)] hover:scale-105 transition-all" onclick="toggleLogin()">
@@ -534,7 +574,7 @@
         <div class="text-center mb-20">
             <h5 class="font-label text-xs uppercase tracking-[0.4em] text-[#00F0FF] mb-4">Subscription Plans</h5>
             <h2 class="text-6xl font-black font-headline text-on-surface mb-6">Choose your plan</h2>
-            <p class="text-on-surface-variant/80 font-body text-lg max-w-2xl mx-auto">Select Basic, Standard, or Premium access for your team. Each plan is built for reproducible analysis, collaborative workflows, and faster hypothesis testing.</p>
+            <p class="text-on-surface-variant/80 font-body text-lg max-w-2xl mx-auto">Free for core tools, Standard at ₹999/mo for active workflows, and Premium at ₹2,999/mo for complete AI-first multi-omics capabilities.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
             <!-- Free Plan -->
@@ -583,11 +623,44 @@
         </div>
     </section>
 
+    <!-- Core Protocols (Product Section) -->
+    <section class="py-32 px-12 md:px-24 bg-surface-container-low border-y border-outline-variant/10" id="product-section">
+        <div class="mb-16 text-center">
+            <h2 class="text-4xl font-black font-headline text-on-surface">Multi-Omics Computational Orchestrator</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="group relative p-10 bg-surface-container rounded-xl overflow-hidden hover:bg-surface-bright transition-all duration-500">
+                <div class="absolute top-0 left-0 w-1 h-full bg-primary-container scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-top"></div>
+                <div class="relative z-10">
+                    <span class="material-symbols-outlined text-primary-container text-4xl mb-6 block" style="font-variation-settings: 'FILL' 1;">dataset_linked</span>
+                    <h3 class="text-2xl font-bold font-headline mb-4">Precision Alignment</h3>
+                    <p class="text-on-surface-variant font-body leading-relaxed">Advanced sequence alignment algorithms optimized for noisy nanopore data and short-read precision matching.</p>
+                </div>
+            </div>
+            <div class="group relative p-10 bg-surface-container rounded-xl overflow-hidden hover:bg-surface-bright transition-all duration-500">
+                <div class="absolute top-0 left-0 w-1 h-full bg-primary-container scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-top"></div>
+                <div class="relative z-10">
+                    <span class="material-symbols-outlined text-primary-container text-4xl mb-6 block">model_training</span>
+                    <h3 class="text-2xl font-bold font-headline mb-4">Structural Simulation</h3>
+                    <p class="text-on-surface-variant font-body leading-relaxed">Neural-fold protein prediction with atomic-level accuracy, identifying tertiary structures in milliseconds.</p>
+                </div>
+            </div>
+            <div class="group relative p-10 bg-surface-container rounded-xl overflow-hidden hover:bg-surface-bright transition-all duration-500">
+                <div class="absolute top-0 left-0 w-1 h-full bg-primary-container scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-top"></div>
+                <div class="relative z-10">
+                    <span class="material-symbols-outlined text-primary-container text-4xl mb-6 block">hub</span>
+                    <h3 class="text-2xl font-bold font-headline mb-4">Orchestrated Workflows</h3>
+                    <p class="text-on-surface-variant font-body leading-relaxed">Unified pipelines connecting transcriptomics, proteomics, and metabolomics into a single narrative flow.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="py-24 px-12 md:px-24 bg-surface-container-lowest border-t border-outline-variant/10">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-12 pb-12">
             <div class="col-span-2 md:col-span-1">
-                <img alt="MOCO Logo Small" class="h-8 w-auto mb-4" src="https://lh3.googleusercontent.com/aida/ADBb0uiVZxyt40kVCpDaVCjbjk3xJcutItS5X7j_07xJLedNKgZMeblXcFQPeGAKoacR31-kZAwc9DEqEU2Sx9dFGmm_aWQkzKLtspQbQkLH07IlXjcMWx1GDYTbAourUgiY1fWLz73PQ8lUogtkq5HTcssi6Iz9x8wH-LlXxd_PFSxfDcz_jW4EeJD-GOYeSr34KnCxl3HrMuLqBc7NAcLnW72zznrXk6UTOX_SntypJDD_kjkC2hkmVJC-t-_wm-dW-O0tRJ948WnaYg8"/>
+                <img alt="MOCO Logo Small" class="h-12 w-auto mb-4" src="MOCO-logo-transparent.png"/>
                 <p class="text-sm font-bold text-on-surface mb-2">MOCO Multi-Omics Computational Orchestrator</p>
                 <p class="text-xs text-on-surface-variant/60 font-label leading-relaxed">Precision Multi-Omics Engine for the future of computational biology.</p>
             </div>
@@ -612,7 +685,7 @@
                 <h5 class="font-label text-[10px] uppercase tracking-widest text-[#00F0FF]">System Status</h5>
                 <div class="flex items-center gap-2">
                     <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <span class="text-xs text-on-surface-variant/80 font-label">All Systems Nominal</span>
+                <span class="text-xs text-on-surface-variant/80 font-label">All Systems Nominal</span>
                 </div>
             </div>
         </div>
@@ -638,11 +711,14 @@
     // Header scroll background effect
     window.addEventListener('scroll', () => {
         const header = document.querySelector('header');
+        const logo = document.querySelector('.site-logo');
         if (window.scrollY > 50) {
+            logo?.classList.add('is-hidden-on-scroll');
             header.classList.add('bg-[#0c0e12]/80', 'backdrop-blur-xl', 'border-b', 'border-[#3b494b]/10');
             header.classList.remove('py-8');
             header.classList.add('py-4');
         } else {
+            logo?.classList.remove('is-hidden-on-scroll');
             header.classList.remove('bg-[#0c0e12]/80', 'backdrop-blur-xl', 'border-b', 'border-[#3b494b]/10');
             header.classList.add('py-8');
             header.classList.remove('py-4');
@@ -653,30 +729,56 @@
     const existingUser = JSON.parse(localStorage.getItem('moco_user') || 'null');
     if (existingUser) window.location.href = 'dashboard.html';
 
-    const USERS = {
-        'admin@moco.ai': { pass: 'admin123', role: 'admin', name: 'Admin', plan: 'premium' },
-        'user@moco.ai': { pass: 'user123', role: 'user', name: 'Researcher', plan: 'free' },
-        'pro@moco.ai': { pass: 'pro123', role: 'user', name: 'Pro User', plan: 'standard' },
-    };
+    const API_BASE = window.MOCO_API_BASE || 'http://localhost:4000';
 
-    function handleLogin() {
+    function storeSession(authData) {
+        localStorage.setItem('moco_user', JSON.stringify(authData.user));
+        localStorage.setItem('moco_auth_token', authData.token);
+    }
+
+    async function apiRequest(path, method = 'GET', payload = null, withAuth = false) {
+        const headers = { 'Content-Type': 'application/json' };
+        if (withAuth) {
+            const token = localStorage.getItem('moco_auth_token');
+            if (token) headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${API_BASE}${path}`, {
+            method,
+            headers,
+            body: payload ? JSON.stringify(payload) : undefined,
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.message || 'Request failed.');
+        }
+        return data;
+    }
+
+    async function handleLogin() {
         const email = document.getElementById('login-email').value.trim();
         const pass = document.getElementById('login-pass').value;
         const errorEl = document.getElementById('login-error');
-        const savedUsers = JSON.parse(localStorage.getItem('moco_users') || '{}');
-        const account = savedUsers[email] || USERS[email];
-        if (account && account.pass === pass) {
+
+        if (!email || !pass) {
+            errorEl.textContent = 'Please enter both email and password.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const authData = await apiRequest('/api/auth/login', 'POST', { email, password: pass });
+            storeSession(authData);
             errorEl.classList.add('hidden');
-            const userPayload = { email, name: account.name, role: account.role, plan: account.plan || 'standard' };
-            localStorage.setItem('moco_user', JSON.stringify(userPayload));
             window.location.href = 'dashboard.html';
-        } else {
-            errorEl.textContent = 'Invalid email or password.';
+        } catch (error) {
+            errorEl.textContent = error.message || 'Invalid email or password.';
             errorEl.classList.remove('hidden');
         }
     }
 
-    function handleSignup() {
+    async function handleSignup() {
         const name = document.getElementById('signup-name').value.trim();
         const email = document.getElementById('signup-email').value.trim();
         const role = document.getElementById('signup-role').value.trim();
@@ -690,15 +792,19 @@
             alert('Passwords do not match.');
             return;
         }
-        const savedUsers = JSON.parse(localStorage.getItem('moco_users') || '{}');
-        if (savedUsers[email] || USERS[email]) {
-            alert('An account with this email already exists.');
-            return;
+
+        try {
+            const authData = await apiRequest('/api/auth/signup', 'POST', {
+                name,
+                email,
+                role,
+                password: pass
+            });
+            storeSession(authData);
+            window.location.href = 'dashboard.html';
+        } catch (error) {
+            alert(error.message || 'Unable to create account.');
         }
-        savedUsers[email] = { pass, name, role, plan: 'standard' };
-        localStorage.setItem('moco_users', JSON.stringify(savedUsers));
-        localStorage.setItem('moco_user', JSON.stringify({ email, name, role, plan: 'standard' }));
-        window.location.href = 'dashboard.html';
     }
 
     function toggleAuthMode(mode) {
@@ -709,40 +815,132 @@
         if (mode === 'signup') {
             loginPanel.classList.add('hidden');
             signupPanel.classList.remove('hidden');
-            authTitle.textContent = 'Create Account';
+            authTitle.textContent = 'Login';
         } else {
             loginPanel.classList.remove('hidden');
             signupPanel.classList.add('hidden');
-            authTitle.textContent = 'Sign In';
+            authTitle.textContent = 'Login';
         }
     }
 
     // --- Google Login Logic ---
     let selectedGoogleAccountData = null;
+    const DEVICE_LOGGED_IN_GOOGLE_EMAILS = ['alice@example.com'];
+
+    function goToGoogleStep(step) {
+        document.getElementById('google-step-1').classList.add('hidden');
+        document.getElementById('google-step-2').classList.add('hidden');
+        document.getElementById('google-step-3').classList.add('hidden');
+        document.getElementById(`google-step-${step}`).classList.remove('hidden');
+    }
+
     function openGooglePanel() {
+        const returnUrl = `${window.location.origin}${window.location.pathname}?google=1`;
+        window.location.href = `https://accounts.google.com/AccountChooser?continue=${encodeURIComponent(returnUrl)}`;
+    }
+
+    function openGooglePanelFallback() {
         selectedGoogleAccountData = null;
-        document.getElementById('google-continue').disabled = true;
-        document.querySelectorAll('#google-account-list button').forEach(btn => btn.classList.remove('border-primary-container'));
+        document.querySelectorAll('#google-account-list button').forEach(btn => btn.classList.remove('border-blue-500', 'bg-blue-50/50'));
+
+        const googlePasswordInput = document.getElementById('google-password-input');
+        googlePasswordInput.value = '';
+        googlePasswordInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500', 'ring-red-500', 'is-invalid');
+        googlePasswordInput.classList.add('border-slate-300');
+        googlePasswordInput.removeAttribute('aria-invalid');
+
+        const mocoNewPasswordInput = document.getElementById('moco-new-password');
+        mocoNewPasswordInput.value = '';
+        mocoNewPasswordInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500', 'ring-red-500', 'is-invalid');
+        mocoNewPasswordInput.classList.add('border-slate-300');
+        mocoNewPasswordInput.removeAttribute('aria-invalid');
+
+        const mocoConfirmPasswordInput = document.getElementById('moco-confirm-password');
+        mocoConfirmPasswordInput.value = '';
+        mocoConfirmPasswordInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500', 'ring-red-500', 'is-invalid');
+        mocoConfirmPasswordInput.classList.add('border-slate-300');
+        mocoConfirmPasswordInput.removeAttribute('aria-invalid');
+
+        const googlePasswordError = document.getElementById('google-password-error');
+        googlePasswordError.textContent = '';
+        googlePasswordError.classList.add('hidden');
+
+        goToGoogleStep(1);
         document.getElementById('google-modal').classList.remove('hidden');
     }
+
     function closeGooglePanel() {
         document.getElementById('google-modal').classList.add('hidden');
     }
+
     function selectGoogleAccount(button, email, name, role) {
         selectedGoogleAccountData = { email, name, role };
-        document.getElementById('google-continue').disabled = false;
-        document.querySelectorAll('#google-account-list button').forEach(btn => btn.classList.remove('border-primary-container'));
-        button.classList.add('border-primary-container', 'border-2');
+        document.querySelectorAll('#google-account-list button').forEach(btn => btn.classList.remove('border-blue-500', 'bg-blue-50/50'));
+        button.classList.add('border-blue-500', 'bg-blue-50/50');
+        
+        // Update Step 2 UI
+        document.getElementById('selected-account-email').textContent = email;
+        const avatar = document.getElementById('selected-account-avatar');
+        avatar.textContent = name.charAt(0);
+        avatar.style.backgroundColor = (email.includes('alice')) ? '#DB4437' : '#4285F4';
+        
+        // If selected account is not logged in on this device, ask for Google password first.
+        // If already logged in on this device, go directly to MOCO password setup.
+        const nextStep = DEVICE_LOGGED_IN_GOOGLE_EMAILS.includes(email) ? 3 : 2;
+        setTimeout(() => goToGoogleStep(nextStep), 300);
     }
-    function confirmGoogleLogin() {
+
+    function validateGooglePassword() {
+        const googlePasswordInput = document.getElementById('google-password-input');
+        const googlePasswordError = document.getElementById('google-password-error');
+        const googlePassword = googlePasswordInput.value.trim();
+
+        if (!googlePassword) {
+            googlePasswordInput.classList.remove('border-slate-300');
+            googlePasswordInput.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            googlePasswordInput.setAttribute('aria-invalid', 'true');
+            googlePasswordError.textContent = 'Please enter your Google password to continue.';
+            googlePasswordError.classList.remove('hidden');
+            return;
+        }
+
+        googlePasswordInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500', 'ring-red-500', 'is-invalid');
+        googlePasswordInput.classList.add('border-slate-300');
+        googlePasswordInput.removeAttribute('aria-invalid');
+        googlePasswordError.textContent = '';
+        googlePasswordError.classList.add('hidden');
+
+        goToGoogleStep(3);
+    }
+
+    async function confirmGoogleLogin() {
         if (!selectedGoogleAccountData) return;
-        localStorage.setItem('moco_user', JSON.stringify({
-            email: selectedGoogleAccountData.email,
-            name: selectedGoogleAccountData.name,
-            role: selectedGoogleAccountData.role,
-            plan: 'google'
-        }));
-        window.location.href = 'dashboard.html';
+        
+        const mocoPass = document.getElementById('moco-new-password').value;
+        const mocoConfirm = document.getElementById('moco-confirm-password').value;
+        
+        if (!mocoPass || !mocoConfirm) {
+            alert('Please create and confirm your MOCO password.');
+            return;
+        }
+        
+        if (mocoPass !== mocoConfirm) {
+            alert('Passwords do not match.');
+            return;
+        }
+
+        try {
+            const authData = await apiRequest('/api/auth/google-simulate', 'POST', {
+                email: selectedGoogleAccountData.email,
+                name: selectedGoogleAccountData.name,
+                role: selectedGoogleAccountData.role,
+                password: mocoPass
+            });
+            storeSession(authData);
+            window.location.href = 'dashboard.html';
+        } catch (error) {
+            alert(error.message || 'Google login failed.');
+        }
     }
 
     // --- Promo Code Logic ---
@@ -754,47 +952,38 @@
         promoMessage.classList.add('hidden');
     }
 
-    const PROMO_CODES = {
-        'MOCOSTANDARD': 'standard',
-        'MOCOPREMIUM': 'premium',
-    };
-
-    function activatePromoCode() {
+    async function activatePromoCode() {
         const promoCodeInput = document.getElementById('promo-code-input');
         const promoCode = promoCodeInput.value.trim().toUpperCase();
         const promoMessage = document.getElementById('promo-code-message');
-        const currentUserEmail = document.getElementById('login-email').value.trim();
+        const currentUser = JSON.parse(localStorage.getItem('moco_user') || 'null');
 
-        if (!currentUserEmail) {
-            promoMessage.textContent = 'Please enter your email to apply a promo code.';
+        if (!promoCode) {
+            promoMessage.textContent = 'Please enter a promo code.';
             promoMessage.classList.remove('hidden');
             promoMessage.classList.remove('text-success');
             promoMessage.classList.add('text-error');
             return;
         }
 
-        let savedUsers = JSON.parse(localStorage.getItem('moco_users') || '{}');
-        let account = savedUsers[currentUserEmail] || USERS[currentUserEmail];
-
-        if (!account) {
-            promoMessage.textContent = 'No account found with this email. Please register first.';
+        if (!currentUser) {
+            promoMessage.textContent = 'Log in first to apply a promo code securely.';
             promoMessage.classList.remove('hidden');
             promoMessage.classList.remove('text-success');
             promoMessage.classList.add('text-error');
             return;
         }
 
-        const newPlan = PROMO_CODES[promoCode];
-        if (newPlan) {
-            account.plan = newPlan;
-            savedUsers[currentUserEmail] = account;
-            localStorage.setItem('moco_users', JSON.stringify(savedUsers));
-            promoMessage.textContent = `Promo code activated! Your plan is now ${newPlan.toUpperCase()}.`;
+        try {
+            const updated = await apiRequest('/api/billing/promo', 'POST', { code: promoCode }, true);
+            localStorage.setItem('moco_user', JSON.stringify(updated.user));
+
+            promoMessage.textContent = `Promo code activated! Your plan is now ${updated.user.plan.toUpperCase()}.`;
             promoMessage.classList.remove('hidden');
             promoMessage.classList.remove('text-error');
             promoMessage.classList.add('text-success');
-        } else {
-            promoMessage.textContent = 'Invalid promo code.';
+        } catch (error) {
+            promoMessage.textContent = error.message || 'Invalid promo code.';
             promoMessage.classList.remove('hidden');
             promoMessage.classList.remove('text-success');
             promoMessage.classList.add('text-error');

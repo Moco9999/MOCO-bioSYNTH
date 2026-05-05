@@ -7,6 +7,7 @@ function requireAuth() {
 }
 function logout() {
   localStorage.removeItem('moco_user');
+  localStorage.removeItem('moco_auth_token');
   window.location.href = 'index.html';
 }
 function isAdmin() {
@@ -98,10 +99,9 @@ function injectNav(activePage) {
       display: flex; align-items: center; gap: 10px;
       font-family: var(--mono); text-decoration: none;
     }
-    .topbar-logo-icon {
-      width: 32px; height: 32px; background: linear-gradient(135deg,var(--cyan),var(--cyan-dim));
-      border-radius: 8px; display:flex; align-items:center; justify-content:center;
-      font-weight:700; font-size:14px; color:#050a0e;
+    .topbar-logo img {
+      height: 34px; width: auto; object-fit: contain;
+      filter: drop-shadow(0 0 8px rgba(0,229,255,0.18));
     }
     .topbar-logo-text { font-weight:700; font-size:15px; color:var(--cyan); letter-spacing:2px; }
     .topbar-logo-sub { font-size:9px; color:var(--text-dim); letter-spacing:1px; }
@@ -210,7 +210,7 @@ function injectNav(activePage) {
 
   <nav class="topbar">
     <a class="topbar-logo" href="dashboard.html">
-      <div class="topbar-logo-icon">M</div>
+      <img src="MOCO-logo-transparent.png" alt="MOCO Logo"/>
       <div>
         <div class="topbar-logo-text">MOCO</div>
         <div class="topbar-logo-sub">Multi Omics Computational Orchestrator</div>
@@ -317,6 +317,13 @@ function injectNav(activePage) {
   </aside>`;
 
   document.body.insertAdjacentHTML('afterbegin', navHTML);
+}
+
+function toggleDeepDive(id) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.classList.toggle('hidden');
+  }
 }
 
 function toggleDropdown() {

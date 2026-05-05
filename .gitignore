@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+
+# Backend env files
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Dependencies and logs
+node_modules/
+*.log

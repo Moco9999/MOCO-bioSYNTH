@@ -34,6 +34,9 @@
   .field { margin-bottom:18px; }
   .field label { display:block; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--text-dim); margin-bottom:8px; }
   .field input, .field textarea, .field select { width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:12px 14px; color:var(--text); font-family:var(--mono); font-size:13px; outline:none; transition:all .2s; }
+  .upload-zone { border:1px dashed rgba(0,229,255,.35); background:rgba(0,229,255,.05); border-radius:16px; padding:16px; margin-bottom:18px; }
+  .upload-zone input[type=file] { margin-top:10px; color:var(--text-dim); }
+  .auto-chip { display:inline-flex; margin:4px 6px 0 0; padding:5px 9px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--text-dim); font-family:var(--mono); font-size:10px; }
   .field input:focus, .field textarea:focus, .field select:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,229,255,0.08); }
   textarea { min-height:140px; resize:vertical; }
   .result-box { background:rgba(0,229,255,0.03); border:1px solid rgba(0,229,255,0.10); border-radius:14px; padding:18px; color:var(--text); }
@@ -272,7 +275,15 @@ const toolDefinitions = {
 
 const params = new URLSearchParams(window.location.search);
 const toolId = params.get('id');
-const tool = toolDefinitions[toolId] || toolDefinitions['mutation-analysis'];
+const fallbackTool = {
+  title: params.get('name') || 'MOCO Auto Analysis',
+  category: 'Auto Pipeline',
+  description: 'Paste or upload a sequence, FASTA, accession, gene ID, or protein string. MOCO auto-detects the input type and runs the relevant analysis stack.',
+  tier: 'free',
+  fields: [{ id: 'auto_input', label: 'Sequence, FASTA, Gene ID, or Accession', type: 'textarea', placeholder: '>sequence\nATG... or BRCA1 / NM_000546 / protein sequence' }],
+  actions: ['runAutoAnalysis']
+};
+const tool = toolDefinitions[toolId] || fallbackTool;
 
 function setAlert(message, type = 'info') {
   const alert = document.getElementById('tool-alert');
@@ -318,7 +329,12 @@ function buildForm() {
   document.getElementById('tool-description').textContent = tool.description;
   document.getElementById('tool-category').textContent = tool.category;
   const form = document.getElementById('tool-form');
-  form.innerHTML = tool.fields.map(field => {
+  form.innerHTML = `<div class="upload-zone">
+      <div class="panel-title" style="margin-bottom:6px">Auto ingest</div>
+      <div class="section-note" style="margin:0">Upload FASTA/TXT/FASTQ or paste any sequence/gene ID below. MOCO detects DNA, RNA, protein, accession, or gene symbols automatically.</div>
+      <input id="sequence-file" type="file" accept=".fa,.fasta,.fq,.fastq,.txt,.csv" onchange="loadSequenceFile(event)">
+      <div id="auto-detect-summary"></div>
+    </div>` + tool.fields.map(field => {
     const type = field.type === 'textarea' ? 'textarea' : 'input';
     return `
       <div class="field">
@@ -327,8 +343,10 @@ function buildForm() {
           ? `<textarea id="${field.id}" placeholder="${field.placeholder || ''}"></textarea>`
           : `<input id="${field.id}" type="${field.type}" placeholder="${field.placeholder || ''}" />`}
       </div>`;
-  }).join('') + `<button class="action-btn primary" onclick="runToolAction()">Run Analysis</button>`;
-  document.getElementById('tool-run-btn').style.display = 'none';
+  }).join('') + `<button type="button" class="action-btn primary" onclick="runToolAction()">Run Analysis</button>
+    <button type="button" class="action-btn secondary" style="margin-left:8px" onclick="runAutoAnalysis()">Auto Analyze Everything</button>`;
+  const firstInput = form.querySelector('textarea, input[type="text"]');
+  if (firstInput) firstInput.addEventListener('input', () => renderDetectionSummary(collectPrimaryInput()));
 }
 
 function setOutput(html) {
@@ -378,6 +396,99 @@ function parseFasta(text) {
   const header = lines[0]?.startsWith('>') ? lines[0].slice(1).trim() : '';
   const seq = lines.slice(1).join('').replace(/\s+/g, '');
   return { header, seq };
+}
+
+function collectPrimaryInput() {
+  const fields = Array.from(document.querySelectorAll('#tool-form textarea, #tool-form input[type="text"]'));
+  return fields.map(f => f.value).find(Boolean) || '';
+}
+
+function detectInput(raw) {
+  const text = String(raw || '').trim();
+  const fasta = text.startsWith('>') ? parseFasta(text) : null;
+  const candidate = fasta?.seq || text;
+  const seq = candidate.replace(/^[@+].*$/gm, '').replace(/[^A-Za-z*]/g, '').toUpperCase();
+  const compact = text.replace(/\s+/g, '');
+  const isAccession = /^[A-Z]{1,4}_?\d+(\.\d+)?$/i.test(compact) || /^[NX][MPR]_[0-9.]+$/i.test(compact);
+  const isGene = /^[A-Z0-9-]{2,16}$/i.test(compact) && !/^[ACGTUN]+$/i.test(compact) && !isAccession;
+  const dnaScore = (seq.match(/[ACGTN]/g) || []).length / Math.max(seq.length, 1);
+  const rnaScore = (seq.match(/[ACGUN]/g) || []).length / Math.max(seq.length, 1);
+  const proteinScore = (seq.match(/[ACDEFGHIKLMNPQRSTVWY*]/g) || []).length / Math.max(seq.length, 1);
+  let type = 'unknown';
+  if (isAccession) type = 'accession';
+  else if (isGene) type = 'gene';
+  else if (seq && seq.includes('U') && rnaScore > .85) type = 'rna';
+  else if (seq && dnaScore > .85) type = 'dna';
+  else if (seq && proteinScore > .85) type = 'protein';
+  return { type, seq, text, header: fasta?.header || '', isAccession, isGene };
+}
+
+function renderDetectionSummary(raw) {
+  const box = document.getElementById('auto-detect-summary');
+  if (!box) return;
+  const detected = detectInput(raw);
+  if (!raw.trim()) { box.innerHTML = ''; return; }
+  box.innerHTML = `<span class="auto-chip">Detected: ${detected.type.toUpperCase()}</span><span class="auto-chip">Length: ${detected.seq.length || detected.text.length}</span>${detected.header ? `<span class="auto-chip">${detected.header}</span>` : ''}`;
+}
+
+function loadSequenceFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const target = document.querySelector('#tool-form textarea') || document.querySelector('#tool-form input[type="text"]');
+    if (target) {
+      target.value = String(reader.result || '');
+      renderDetectionSummary(target.value);
+      setAlert(`Loaded ${file.name}. Click Run Analysis or Auto Analyze Everything.`, 'success');
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function resolveAccessionOrGene(detected) {
+  if (detected.type !== 'accession' && detected.type !== 'gene') return detected;
+  setAlert(`Resolving ${detected.type} through NCBI...`, 'info');
+  const query = detected.text.trim();
+  let fasta = await fetchFromNcbi(query);
+  if (!fasta && detected.type === 'gene') {
+    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=nuccore&term=${encodeURIComponent(query + '[Gene] AND Homo sapiens[Organism]')}&retmode=json&retmax=1`;
+    try {
+      const search = await fetch(searchUrl).then(r => r.json());
+      const id = search?.esearchresult?.idlist?.[0];
+      if (id) fasta = await fetchFromNcbi(id);
+    } catch {}
+  }
+  if (!fasta) return detected;
+  const parsed = parseFasta(fasta);
+  return detectInput(`>${parsed.header}\n${parsed.seq}`);
+}
+
+async function runAutoAnalysis() {
+  const raw = collectPrimaryInput();
+  if (!raw.trim()) { setAlert('Paste a sequence, gene ID, accession, or upload a file first.', 'warning'); return; }
+  let detected = await resolveAccessionOrGene(detectInput(raw));
+  renderDetectionSummary(raw);
+  if (!detected.seq) { setAlert('Could not detect a usable biological sequence.', 'warning'); return; }
+  if (detected.type === 'rna') detected.seq = detected.seq.replace(/T/g, 'U');
+  const dna = detected.type === 'rna' ? detected.seq.replace(/U/g, 'T') : detected.seq;
+  const gc = ((dna.match(/[GC]/g) || []).length / Math.max(dna.length, 1) * 100).toFixed(2);
+  const rows = [
+    { label: 'Detected input', value: detected.type.toUpperCase() },
+    { label: 'Sequence length', value: `${detected.seq.length} ${detected.type === 'protein' ? 'aa' : 'bp/nt'}` },
+    { label: 'GC content', value: detected.type === 'protein' ? 'n/a' : `${gc}%` },
+    { label: 'Recommended workflow', value: detected.type === 'protein' ? 'Protein composition → molecular weight → hotspot scan' : detected.type === 'rna' ? 'RNA QC → translation → secondary structure' : 'DNA QC → ORF scan → primer design → variant/restriction analysis' }
+  ];
+  let html = `<div class="result-box">${rows.map(row => `<div class="result-row"><div class="result-label">${row.label}</div><div class="result-value">${row.value}</div></div>`).join('')}</div>`;
+  if (detected.type === 'protein') {
+    const counts = {}; detected.seq.split('').forEach(a => counts[a] = (counts[a] || 0) + 1);
+    html += `<div class="section-note">Protein composition</div><div class="result-box">${Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([a,c]) => `<div class="result-row"><div class="result-label">${a}</div><div class="result-value">${c}</div></div>`).join('')}</div>`;
+  } else {
+    const starts = (dna.match(/ATG/g) || []).length;
+    html += `<div class="section-note">Automated QC and discovery</div><div class="result-box"><div class="result-row"><div class="result-label">Start codons</div><div class="result-value">${starts}</div></div><div class="result-row"><div class="result-label">Reverse complement preview</div><div class="result-value" style="word-break:break-all">${dna.split('').reverse().map(nt => ({A:'T',T:'A',G:'C',C:'G'}[nt] || nt)).join('').slice(0,160)}${dna.length>160?'…':''}</div></div></div>`;
+  }
+  setOutput(html);
+  setAlert('MOCO auto-analysis completed.', 'success');
 }
 
 function runToolAction() {
