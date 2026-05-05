@@ -5,7 +5,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>MOCO | Multi-Omics Computational Orchestrator</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&family=Orbitron:wght@700;800;900&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script id="tailwind-config">
         tailwind.config = {
@@ -95,6 +95,16 @@
         }
         .text-glow {
             text-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+        }
+        .hero-title {
+            font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+            letter-spacing: -0.09em;
+            background: linear-gradient(110deg, #ffffff 0%, #dbfcff 28%, #00f0ff 54%, #7df4ff 72%, #e2e2e8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 28px rgba(0,240,255,.32), 0 0 70px rgba(0,240,255,.15);
+            filter: drop-shadow(0 10px 26px rgba(0,0,0,.34));
         }
         .synthetic-gradient {
             background: linear-gradient(135deg, #dbfcff 0%, #00f0ff 100%);
@@ -357,8 +367,8 @@
 <main class="relative">
     <!-- Hero Section -->
     <section class="min-h-screen flex items-center px-12 md:px-24 pt-20 relative overflow-hidden" id="hero">
-        <div class="max-w-4xl z-20 relative pointer-events-none dynamic-float">
-            <h1 class="text-[10rem] md:text-[12rem] leading-none font-black tracking-tighter text-[#e2e2e8] font-headline select-none opacity-90 text-glow">
+        <div class="max-w-4xl z-20 relative pointer-events-none">
+            <h1 class="hero-title text-[9rem] md:text-[12rem] leading-none font-black select-none opacity-95">
                 MOCO
             </h1>
             <p class="text-3xl font-light tracking-tight text-primary-fixed-dim font-headline mt-[-1.5rem] md:mt-[-2rem] ml-4 max-w-xl">

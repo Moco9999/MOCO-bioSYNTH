@@ -10,6 +10,9 @@ const app = express();
 const PORT = Number(process.env.PORT || 4000);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || '*';
 const AUTH_SECRET = process.env.AUTH_SECRET || 'moco-local-development-secret';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const TOKEN_TTL_MS = Number(process.env.TOKEN_TTL_MS || 12 * 60 * 60 * 1000);
+const weakPasswords = new Set(['admin123', 'password', 'password123', 'admin@moco.ai', 'admin@moco ai']);
 
 if (!process.env.AUTH_SECRET) {
   console.warn('AUTH_SECRET is not set. Using local development secret. Set AUTH_SECRET in backend/.env for production.');
@@ -19,8 +22,18 @@ if (!process.env.AUTH_SECRET) {
 
 app.use(cors({ origin: CLIENT_ORIGIN === '*' ? true : CLIENT_ORIGIN }));
 app.use(express.json({ limit: '100kb' }));
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+app.use((_, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
 
 const users = new Map();
+const rateBuckets = new Map();
+const failedLogins = new Map();
 const promoCodes = {
   MOCOSTANDARD: 'standard',
   MOCOPREMIUM: 'premium',
@@ -59,11 +72,74 @@ function verifyToken(token) {
   if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
 
   try {
-    return JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    const parsed = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!parsed.iat || Date.now() - parsed.iat > TOKEN_TTL_MS) return null;
+    return parsed;
   } catch {
     return null;
   }
 }
+
+function getClientKey(req, suffix = '') {
+  return `${req.ip || req.socket.remoteAddress || 'unknown'}:${suffix}`;
+}
+
+function rateLimit({ windowMs, max, keyPrefix }) {
+  return (req, res, next) => {
+    const now = Date.now();
+    const key = `${keyPrefix}:${getClientKey(req)}`;
+    const bucket = rateBuckets.get(key) || { count: 0, resetAt: now + windowMs };
+    if (now > bucket.resetAt) {
+      bucket.count = 0;
+      bucket.resetAt = now + windowMs;
+    }
+    bucket.count += 1;
+    rateBuckets.set(key, bucket);
+    res.setHeader('RateLimit-Limit', String(max));
+    res.setHeader('RateLimit-Remaining', String(Math.max(0, max - bucket.count)));
+    res.setHeader('RateLimit-Reset', String(Math.ceil(bucket.resetAt / 1000)));
+    if (bucket.count > max) {
+      return res.status(429).json({ message: 'Too many requests. Please wait and try again.' });
+    }
+    next();
+  };
+}
+
+function getLoginState(email) {
+  const now = Date.now();
+  const state = failedLogins.get(email) || { count: 0, firstAt: now, lockedUntil: 0 };
+  if (now - state.firstAt > 15 * 60 * 1000) {
+    state.count = 0;
+    state.firstAt = now;
+    state.lockedUntil = 0;
+  }
+  return state;
+}
+
+function recordLoginFailure(email) {
+  const state = getLoginState(email);
+  state.count += 1;
+  if (state.count >= 5) state.lockedUntil = Date.now() + 15 * 60 * 1000;
+  failedLogins.set(email, state);
+}
+
+function clearLoginFailures(email) {
+  failedLogins.delete(email);
+}
+
+const globalLimiter = rateLimit({ windowMs: 60 * 1000, max: 240, keyPrefix: 'global' });
+const authLimiter = rateLimit({ windowMs: 60 * 1000, max: 12, keyPrefix: 'auth' });
+app.use(globalLimiter);
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, bucket] of rateBuckets.entries()) {
+    if (now > bucket.resetAt + 60 * 1000) rateBuckets.delete(key);
+  }
+  for (const [key, state] of failedLogins.entries()) {
+    if (now - state.firstAt > 30 * 60 * 1000 && now > state.lockedUntil) failedLogins.delete(key);
+  }
+}, 5 * 60 * 1000).unref();
 
 function issueAuthResponse(user) {
   const userSafe = {
@@ -91,6 +167,11 @@ function seedUsers() {
   const seed = [];
 
   if (process.env.ADMIN_PASSWORD) {
+    if (weakPasswords.has(String(process.env.ADMIN_PASSWORD).toLowerCase())) {
+      const msg = 'ADMIN_PASSWORD is a weak/default password. Change it before deployment.';
+      if (IS_PRODUCTION) throw new Error(msg);
+      console.warn(msg);
+    }
     seed.push({
       email: 'admin@moco.ai',
       password: process.env.ADMIN_PASSWORD,
@@ -141,7 +222,7 @@ app.get('/api/health', (_, res) => {
   res.json({ status: 'ok' });
 });
 
-app.post('/api/auth/signup', (req, res) => {
+app.post('/api/auth/signup', authLimiter, (req, res) => {
   const name = String(req.body.name || '').trim();
   const email = String(req.body.email || '').trim().toLowerCase();
   const role = String(req.body.role || '').trim();
@@ -168,19 +249,25 @@ app.post('/api/auth/signup', (req, res) => {
   return res.status(201).json(issueAuthResponse(user));
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', authLimiter, (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
+  const state = getLoginState(email || getClientKey(req, 'anonymous'));
+  if (state.lockedUntil && Date.now() < state.lockedUntil) {
+    return res.status(429).json({ message: 'Too many failed login attempts. Try again later.' });
+  }
 
   const user = users.get(email);
   if (!user || !verifyPassword(password, user.passwordHash)) {
+    recordLoginFailure(email || getClientKey(req, 'anonymous'));
     return res.status(401).json({ message: 'Invalid email or password.' });
   }
 
+  clearLoginFailures(email);
   return res.json(issueAuthResponse(user));
 });
 
-app.post('/api/auth/google-simulate', (req, res) => {
+app.post('/api/auth/google-simulate', authLimiter, (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const name = String(req.body.name || '').trim();
   const role = String(req.body.role || 'user').trim() || 'user';
