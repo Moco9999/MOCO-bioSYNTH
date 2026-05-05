@@ -117,38 +117,36 @@
             animation: dynamicFloat 10s ease-in-out infinite;
         }
 
-        .dna-container {
-            mask-image: linear-gradient(to left, black 55%, transparent 98%);
-            -webkit-mask-image: linear-gradient(to left, black 55%, transparent 98%);
-        }
-
-        .dna-canvas-wrap {
-            position: relative;
-            width: min(620px, 52vw);
-            height: 100%;
-            filter: drop-shadow(0 0 30px rgba(0,240,255,.35));
-        }
-
-        #dna-canvas {
+        .dna-gif-bg {
             position: absolute;
-            inset: 0;
+            inset: -8vh -4vw -8vh auto;
+            width: min(900px, 68vw);
+            height: 116vh;
+            opacity: .62;
+            pointer-events: none;
+            z-index: 1;
+            mix-blend-mode: screen;
+            filter: saturate(1.35) contrast(1.25) brightness(1.12) drop-shadow(0 0 44px rgba(0, 240, 255, .42));
+            mask-image: radial-gradient(ellipse at 58% 50%, black 34%, rgba(0,0,0,.86) 56%, transparent 82%);
+            -webkit-mask-image: radial-gradient(ellipse at 58% 50%, black 34%, rgba(0,0,0,.86) 56%, transparent 82%);
+        }
+
+        .dna-gif-bg img {
             width: 100%;
             height: 100%;
+            object-fit: cover;
+            object-position: center;
+            transform: rotate(-7deg) scale(1.08);
         }
 
-        .dna-canvas-wrap::before,
-        .dna-canvas-wrap::after {
-            content: '';
+        .hero-vignette {
             position: absolute;
-            inset: 8% 0;
+            inset: 0;
+            z-index: 2;
             pointer-events: none;
-            border-radius: 999px;
-            background: radial-gradient(ellipse at center, rgba(0,240,255,.18), transparent 62%);
-            filter: blur(35px);
-        }
-        .dna-canvas-wrap::after {
-            background: radial-gradient(ellipse at center, rgba(114,19,255,.16), transparent 65%);
-            transform: translateX(70px);
+            background:
+                radial-gradient(circle at 70% 46%, rgba(0,240,255,.12), transparent 32%),
+                linear-gradient(90deg, #0c0e12 0%, rgba(12,14,18,.82) 34%, rgba(12,14,18,.18) 66%, #0c0e12 100%);
         }
 
         .site-logo {
@@ -374,11 +372,10 @@
         </div>
         
         <!-- DNA Visualizer -->
-        <div class="absolute right-[2%] top-0 w-[56vw] h-full z-10 dna-container flex items-center justify-center pointer-events-none">
-            <div class="dna-canvas-wrap opacity-90">
-                <canvas id="dna-canvas" aria-label="Animated DNA double helix"></canvas>
-            </div>
+        <div class="dna-gif-bg" aria-hidden="true">
+            <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExc281aGQ2djg4endyZmhwNWRybHRrdzRvbmJibTNnb21jZWpvZDAyZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/s1IJ0L8hZ4wms/giphy.gif" alt="" />
         </div>
+        <div class="hero-vignette"></div>
     </section>
 
     <!-- Analytical Suite (Features Section) -->
