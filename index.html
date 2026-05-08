@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html class="dark" lang="en">
 <head>
     <meta charset="utf-8"/>
@@ -872,7 +872,7 @@
         if (mode === 'signup') {
             loginPanel.classList.add('hidden');
             signupPanel.classList.remove('hidden');
-            authTitle.textContent = 'Login';
+            authTitle.textContent = 'Create Account';
         } else {
             loginPanel.classList.remove('hidden');
             signupPanel.classList.add('hidden');
@@ -892,8 +892,7 @@
     }
 
     function openGooglePanel() {
-        const returnUrl = `${window.location.origin}${window.location.pathname}?google=1`;
-        window.location.href = `https://accounts.google.com/AccountChooser?continue=${encodeURIComponent(returnUrl)}`;
+        openGooglePanelFallback();
     }
 
     function openGooglePanelFallback() {
