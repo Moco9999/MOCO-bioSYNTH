@@ -788,9 +788,15 @@
 
     const API_BASE = window.MOCO_API_BASE || 'http://localhost:4000';
 
+    const MOCK_USERS = [
+        { email: 'admin@moco.ai', password: 'admin123', name: 'Admin', role: 'admin', plan: 'premium' },
+        { email: 'user@moco.ai', password: 'user1234', name: 'Researcher', role: 'user', plan: 'free' },
+        { email: 'pro@moco.ai', password: 'pro12345', name: 'Pro User', role: 'user', plan: 'standard' }
+    ];
+
     function storeSession(authData) {
         localStorage.setItem('moco_user', JSON.stringify(authData.user));
-        localStorage.setItem('moco_auth_token', authData.token);
+        localStorage.setItem('moco_auth_token', authData.token || 'mock-token-' + Date.now());
     }
 
     async function apiRequest(path, method = 'GET', payload = null, withAuth = false) {
@@ -830,6 +836,16 @@
             errorEl.classList.add('hidden');
             window.location.href = 'dashboard.html';
         } catch (error) {
+            // Fallback for demo environments (like GitHub Pages) or when backend is offline
+            const mockUser = MOCK_USERS.find(u => u.email === email && u.password === pass);
+            if (mockUser) {
+                console.log('Login successful (Mock Fallback)');
+                storeSession({ user: { email: mockUser.email, name: mockUser.name, role: mockUser.role, plan: mockUser.plan } });
+                errorEl.classList.add('hidden');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
             errorEl.textContent = error.message || 'Invalid email or password.';
             errorEl.classList.remove('hidden');
         }
@@ -860,6 +876,15 @@
             storeSession(authData);
             window.location.href = 'dashboard.html';
         } catch (error) {
+            // Fallback for demo environments: Allow local-only signup
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || !window.location.hostname.includes('localhost')) {
+                console.log('Signup successful (Local Mock Fallback)');
+                storeSession({
+                    user: { name, email, role, plan: 'standard' }
+                });
+                window.location.href = 'dashboard.html';
+                return;
+            }
             alert(error.message || 'Unable to create account.');
         }
     }
@@ -995,7 +1020,17 @@
             storeSession(authData);
             window.location.href = 'dashboard.html';
         } catch (error) {
-            alert(error.message || 'Google login failed.');
+            // Fallback for Google simulation in demo environments
+            console.log('Google login successful (Mock Fallback)');
+            storeSession({
+                user: {
+                    email: selectedGoogleAccountData.email,
+                    name: selectedGoogleAccountData.name,
+                    role: selectedGoogleAccountData.role,
+                    plan: 'standard'
+                }
+            });
+            window.location.href = 'dashboard.html';
         }
     }
 
@@ -1039,10 +1074,23 @@
             promoMessage.classList.remove('text-error');
             promoMessage.classList.add('text-success');
         } catch (error) {
-            promoMessage.textContent = error.message || 'Invalid promo code.';
-            promoMessage.classList.remove('hidden');
-            promoMessage.classList.remove('text-success');
-            promoMessage.classList.add('text-error');
+            // Fallback for promo codes in demo environments
+            const promoMap = { 'MOCOSTANDARD': 'standard', 'MOCOPREMIUM': 'premium' };
+            const newPlan = promoMap[promoCode];
+            
+            if (newPlan) {
+                currentUser.plan = newPlan;
+                localStorage.setItem('moco_user', JSON.stringify(currentUser));
+                promoMessage.textContent = `Promo code activated! Your plan is now ${newPlan.toUpperCase()}.`;
+                promoMessage.classList.remove('hidden');
+                promoMessage.classList.remove('text-error');
+                promoMessage.classList.add('text-success');
+            } else {
+                promoMessage.textContent = error.message || 'Invalid promo code.';
+                promoMessage.classList.remove('hidden');
+                promoMessage.classList.remove('text-success');
+                promoMessage.classList.add('text-error');
+            }
         }
     }
 </script>
